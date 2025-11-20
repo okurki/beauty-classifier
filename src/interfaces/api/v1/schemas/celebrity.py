@@ -1,8 +1,8 @@
 from pydantic import Field
 
-from .base import IDMixin
+from .base import Base
 
 
-class Celebrity(IDMixin):
-    name: str = Field("name", min_length=3, max_length=30, description="Celebrity name")
-    picture: bytes | None = Field(None, description="Celebrity picture")
+class Celebrity(Base):
+    name: str = Field(examples=["Jeffrey Epstein"], description="Celebrity name")
+    img_path: str = Field(description="Celebrity image path")

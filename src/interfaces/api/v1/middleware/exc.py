@@ -14,7 +14,7 @@ class ForbiddenException(HTTPException):
         super().__init__(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=(
-                "Insufficient permissions"
+                "Insufficient permissions. "
                 f"Tried to access <{requested}>. Available: <{available}>"
             ),
         )

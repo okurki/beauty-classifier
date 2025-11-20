@@ -34,9 +34,13 @@ class JWTAuth(HTTPBearer):
         if token.role == "admin":
             return  # allow admin access
 
+        if "users/me" in request.url.path:
+            return  # allow access to own resources
+
         requested_id = request.path_params.get("id") or request.path_params.get(
             "user_id"
         )
+
         if requested_id and str(token.user_id) == str(requested_id):
             return  # allow access to own resources
 

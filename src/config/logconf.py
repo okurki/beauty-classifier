@@ -44,20 +44,12 @@ class Logging(BaseModel):
                     "formatter": "json",
                     "stream": sys.stdout,
                 },
-                "file": {
-                    "class": "logging.handlers.RotatingFileHandler",
-                    "level": self.level,
-                    "formatter": "json",
-                    "filename": "logs/app.log",
-                    "maxBytes": self.max_bytes,  # 10MB
-                    "backupCount": self.backup_count,
-                },
             },
-            "root": {"level": self.level, "handlers": ["console", "file"]},
+            "root": {"level": self.level, "handlers": ["console"]},
             "loggers": {
                 "uvicorn": {
                     "level": self.level,
-                    "handlers": ["console", "file"],
+                    "handlers": ["console"],
                     "propagate": False,
                 }
             },

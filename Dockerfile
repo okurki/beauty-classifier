@@ -3,17 +3,14 @@ FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim AS builder
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    make \
-    && rm -rf /var/lib/apt/lists/*
-
 # dependency files
-COPY pyproject.toml uv.lock Makefile ./
+COPY . .
 
 # install dependencies
-RUN make sync-prod
+RUN uv sync --no-dev
 
-COPY . .
+# pull models
+RUN uv run dvc pull models/celebrity_matcher.pt models/attractiveness_classifier.pt
 
 # RUNTIME
 FROM python:3.13-slim
@@ -31,7 +28,6 @@ COPY --from=builder --chown=appuser:appuser /app/.venv .venv
 COPY --from=builder --chown=appuser:appuser /app/src src
 COPY --from=builder --chown=appuser:appuser /app/models models
 COPY --from=builder --chown=appuser:appuser /app/static static
-COPY --from=builder --chown=appuser:appuser /app/logs logs
 COPY --from=builder --chown=appuser:appuser /app/src src
 COPY --from=builder --chown=appuser:appuser /app/.env .env
 

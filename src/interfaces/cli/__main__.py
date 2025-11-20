@@ -4,7 +4,8 @@ import warnings
 
 import asyncclick as click
 
-from src.infrastructure.ml_models.attractiveness import attractiveness_model
+from src.infrastructure.ml_models import attractiveness_model
+from src.infrastructure.ml_models import celebrity_matcher
 from src.config import config
 
 
@@ -17,11 +18,20 @@ def cli():
 @click.option("--train", is_flag=True, default=False, help="Train the model")
 @click.option("--eval", is_flag=True, default=False, help="Evaluate the model")
 def attractiveness(train: bool, eval: bool):
-    attractiveness_model.load()
     if train:
         attractiveness_model.train()
     if eval:
         attractiveness_model.evaluate()
+
+
+@cli.command
+@click.option("--train", is_flag=True, default=False, help="Train the model")
+@click.option("--eval", is_flag=True, default=False, help="Evaluate the model")
+def celebrity(train: bool, eval: bool):
+    if train:
+        celebrity_matcher.train()
+    if eval:
+        celebrity_matcher.evaluate()
 
 
 def check_vm_reachable():

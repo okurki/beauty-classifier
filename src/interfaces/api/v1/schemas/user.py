@@ -10,8 +10,7 @@ class Inference(Base, IDMixin):
     user_id: int = Field(description="User ID")
     celebrities: list[Celebrity] = Field(description="List of celebrities")
     attractiveness: float = Field(examples=[4.0], description="Attractiveness score")
-    date: datetime = Field(examples=[datetime.now()], description="Inference date")
-    picture: bytes | None = Field(None, description="Inference picture")
+    timestamp: datetime = Field(examples=[datetime.now()], description="Inference date")
 
 
 class UserBase(Base):

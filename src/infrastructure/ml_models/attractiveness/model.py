@@ -294,7 +294,7 @@ class AttractivenessModel(ModelBase):
             with torch.no_grad():
                 output = self._model(image_tensor)
 
-            return 1 + output.item() * 4
+            return output.item()
         except Exception as e:
             logger.error(f"Error processing image: {e}")
             raise ValueError(f"Could not process image: {e}") from e

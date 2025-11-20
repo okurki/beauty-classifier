@@ -1,1 +1,1 @@
-from .public import Base, CreatedAtMixin, User, Celebrity, Inference
+from .public import Base, User, Celebrity, Inference
