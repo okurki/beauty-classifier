@@ -14,7 +14,6 @@ CELEB_DATA_PATH = "datasets/open_famous_people_faces"
 CLASSES_FILE = os.path.join(CELEB_DATA_PATH, "classes.json")
 
 IMG_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
-CELEB_DATA_PATH = "datasets/open_famous_people_faces"
 
 
 def _iter_classes(root: str) -> List[str]:
@@ -130,7 +129,6 @@ class CelebrityFolderDataset(Dataset):
         img_path = os.path.join(self.root, relpath)
 
         with Image.open(img_path) as image:
-            image = image.convert("RGB")
             if self.transform is not None:
                 image = self.transform(image)
 
@@ -150,16 +148,18 @@ def get_data_loaders(
     """
     train_transform = transforms.Compose(
         [
-            transforms.Resize((224, 224)),
+            transforms.Resize((160, 160)),
             transforms.RandomHorizontalFlip(p=0.5),
-            transforms.ColorJitter(brightness=0.15, contrast=0.15, saturation=0.15),
+            transforms.ColorJitter(
+                brightness=0.3, contrast=0.3, saturation=0.2, hue=0.1
+            ),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
         ]
     )
     val_transform = transforms.Compose(
         [
-            transforms.Resize((224, 224)),
+            transforms.Resize((160, 160)),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
         ]

@@ -15,9 +15,6 @@ help:
 	@echo "run-migrations       -  run migrations"
 	@echo "pull-data            -  pull data from remote DVC repository"
 
-sync-prod:
-	uv sync --no-dev
-
 sync:
 	uv sync
 
@@ -29,8 +26,6 @@ pull-data:
 
 setup: sync run-migrations pull-data
 	pre-commit install
-
-setup-prod: sync-prod run-migrations pull-data
 
 run:
 	uv run -m src.interfaces.api.v1

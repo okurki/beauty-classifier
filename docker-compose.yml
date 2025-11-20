@@ -6,7 +6,10 @@ services:
       - "8000:8000"
     depends_on:
       - postgres
-    command: [".venv/bin/python", "-m", "src.interfaces.api.v1"]
+    command: [
+      ".venv/bin/alembic", "upgrade", "head", "&&",
+      ".venv/bin/python", "-m", "src.interfaces.api.v1"
+    ]
   
   postgres:
     image: postgres:latest

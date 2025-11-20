@@ -8,8 +8,6 @@ from sqlalchemy.ext.asyncio import (
     AsyncSession,
     AsyncEngine,
 )
-from alembic import command as alembic
-from alembic.config import Config as AlembicConfig
 
 from src.config import config
 from src.utils.decorators import classproperty
@@ -39,9 +37,6 @@ class DB:
             pool_timeout=config.db.pool_timeout,
             pool_pre_ping=True,
         )
-        ab_config = AlembicConfig("alembic.ini")
-        ab_config.set_main_option("sqlalchemy.url", config.db.uri)
-        alembic.upgrade(ab_config, "head")
         yield cls
         await cls.engine.dispose()
 

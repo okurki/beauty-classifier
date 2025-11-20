@@ -9,7 +9,8 @@ from typing import Dict, Optional
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torchvision import models, transforms
+from torchvision import transforms
+from facenet_pytorch import InceptionResnetV1
 from PIL import Image
 
 from ..base_model import ModelBase
@@ -50,7 +51,7 @@ class CelebrityMatcherModel(ModelBase):
     def __init__(
         self,
         out_features: int = 512,
-        top_k: int = 1,
+        top_k: int = 5,
         classes_file: Optional[str] = None,
     ):
         super().__init__()
@@ -59,8 +60,10 @@ class CelebrityMatcherModel(ModelBase):
         # Трансформации для инференса
         self._transform = transforms.Compose(
             [
-                transforms.Resize((224, 224)),
-                transforms.Lambda(lambda x: x.convert("RGB") if x.mode != "RGB" else x),
+                transforms.Resize(
+                    (160, 160)
+                ),  # InceptionResnetV1 expects (160,160)x(160,160)
+                transforms.CenterCrop((160, 160)),
                 transforms.ToTensor(),
                 transforms.Normalize(
                     mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
@@ -76,25 +79,22 @@ class CelebrityMatcherModel(ModelBase):
         self.num_classes = len(self.id2label) if self.id2label else None
 
         # Бекбон + голова
-        try:
-            from torchvision.models import ResNet50_Weights
-
-            backbone = models.resnet50(weights=ResNet50_Weights.IMAGENET1K_V2)
-        except Exception:
-            try:
-                backbone = models.resnet50(weights="IMAGENET1K_V2")
-            except Exception:
-                backbone = models.resnet50(pretrained=True)
+        backbone = self._load_vggface2_backbone()
 
         for p in backbone.parameters():
             p.requires_grad = False
 
-        in_features = backbone.fc.in_features
-        classifier_out = (
-            self.num_classes if self.num_classes else 2
-        )  # временно 2 до чтения classes.json
-        backbone.fc = nn.Sequential(
-            nn.Linear(in_features, out_features),
+        in_features = 1792
+        classifier_out = self.num_classes if self.num_classes else 2
+        backbone.classify = True
+
+        backbone.last_linear = nn.Linear(in_features, out_features, bias=False)
+        backbone.last_bn = nn.BatchNorm1d(
+            out_features, eps=0.001, momentum=0.1, affine=True
+        )
+
+        # Add the final classification layer
+        backbone.logits = nn.Sequential(
             nn.ReLU(),
             nn.Dropout(0.3),
             nn.Linear(out_features, classifier_out),
@@ -103,6 +103,23 @@ class CelebrityMatcherModel(ModelBase):
         self._model = backbone
         self._model.to(self._device)
         self.loaded = False
+
+    def _load_vggface2_backbone(self):
+        """Load VGGFace2 pretrained model from facenet-pytorch"""
+        try:
+            logger.info(
+                "Loading VGGFace2 pretrained InceptionResnetV1 from facenet-pytorch"
+            )
+            return InceptionResnetV1(pretrained="vggface2", classify=False)
+        except Exception as e:
+            logger.warning(
+                f"Could not load VGGFace2: {e}. Falling back to CASIA-WebFace"
+            )
+            try:
+                return InceptionResnetV1(pretrained="casia-webface", classify=False)
+            except Exception as e2:
+                logger.error(f"Could not load any face recognition model: {e2}")
+                raise
 
     # ---- helpers ----
     def _ensure_head(self, num_classes: int, out_features: int = 512):
@@ -169,6 +186,9 @@ class CelebrityMatcherModel(ModelBase):
         metrics = self._setup_metrics(self._device, num_classes)
 
         best_acc = 0.0
+
+        mlflow.set_experiment("Training CelebrityMatcher model")
+
         mlflow.start_run(
             run_name=f"CelebrityMatcher {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
         )
@@ -180,14 +200,16 @@ class CelebrityMatcherModel(ModelBase):
                 "criterion": criterion.__class__.__name__,
                 "optimizer": optimizer.__class__.__name__,
                 "scheduler": scheduler.__class__.__name__ if scheduler else "None",
-                "model_name": "resnet50",
+                "model_name": "vggface2 inceptionresnetv1",
                 "out_features": 512,
                 "fine_tuning": "feature_extraction",
                 "num_classes": num_classes,
                 "top_k": self.top_k,
             }
         )
-        mlflow.set_tag("model_architecture", "resnet50_frozen_fc_custom")
+        mlflow.set_tag(
+            "model_architecture", "vggface2_inceptionresnetv1_frozen_fc_custom"
+        )
         mlflow.log_artifact(__file__, artifact_path="code")
 
         for epoch in range(epochs):
@@ -207,6 +229,7 @@ class CelebrityMatcherModel(ModelBase):
                 total = 0
 
                 pbar = tqdm(loader, desc=f"{phase.capitalize()} Epoch {epoch + 1}")
+                logger.debug(f"Phase {phase.capitalize()}")
                 for images, labels in pbar:
                     images = images.to(self._device)
                     labels = labels.to(self._device)
@@ -364,9 +387,12 @@ class CelebrityMatcherModel(ModelBase):
             indices = indices.squeeze(0).cpu().tolist()
 
             return [
-                SimilarityPrediction(self.id2label[idx], float(p))
+                SimilarityPrediction(name=self.id2label[idx], confidence=float(p))
                 for idx, p in zip(indices, values)
             ]
         except Exception as e:
             logger.error(f"Error processing image: {e}")
             raise ValueError(f"Could not process image: {e}") from e
+
+
+celebrity_matcher = CelebrityMatcherModel()

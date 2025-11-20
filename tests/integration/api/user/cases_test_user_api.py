@@ -19,7 +19,7 @@ test_inference = Inference(
     user_id=2,
     celebrities=[],
     attractiveness=0.5,
-    date=now,
+    timestamp=now,
     picture=b"test",
 )
 test_user_create = UserCreate(name="test", password="test")

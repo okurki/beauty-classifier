@@ -40,7 +40,12 @@ def create_app(lifespan: AsyncGenerator = lifespan) -> FastAPI:
     for router in routers:
         app.include_router(router)
 
-    app.mount("/", StaticFiles(directory="static", html=True), name="static")
+    app.mount("/", StaticFiles(directory="static", html=True), name="welcome page")
+    app.mount(
+        "/celebrities",
+        StaticFiles(directory="datasets/open_famous_people_faces"),
+        name="celebrities",
+    )
 
     return app
 

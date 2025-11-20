@@ -1,9 +1,9 @@
 from enum import StrEnum
 
-from sqlalchemy import ForeignKey, LargeBinary, Table, Column, Enum
+from sqlalchemy import ForeignKey, Table, Column, Enum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from .base import Base, CreatedAtMixin, EntityBase
+from .base import Base, EntityBase
 
 
 class Role(StrEnum):
@@ -19,7 +19,7 @@ association_table = Table(
 )
 
 
-class User(CreatedAtMixin, EntityBase):
+class User(EntityBase):
     __tablename__ = "users"
     name: Mapped[str] = mapped_column(unique=True, nullable=False, index=True)
     password: Mapped[str] = mapped_column(nullable=False)
@@ -33,21 +33,19 @@ class User(CreatedAtMixin, EntityBase):
     )
 
 
-class Celebrity(CreatedAtMixin, EntityBase):
+class Celebrity(EntityBase):
     __tablename__ = "celebrities"
     name: Mapped[str] = mapped_column(nullable=False, index=True)
-    picture: Mapped[bytes] = mapped_column(nullable=False, deferred=True)
-    embedding: Mapped[bytes] = mapped_column(LargeBinary, nullable=True)
+    img_path: Mapped[str] = mapped_column(nullable=False)
     inferences: Mapped[list["Inference"]] = relationship(
         secondary=association_table, back_populates="celebrities", cascade="all, delete"
     )
 
 
-class Inference(CreatedAtMixin, EntityBase):
+class Inference(EntityBase):
     __tablename__ = "inferences"
     attractiveness: Mapped[float] = mapped_column(nullable=False)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
-    picture: Mapped[bytes] = mapped_column(nullable=False, deferred=True)
     user: Mapped["User"] = relationship(back_populates="inferences")
     celebrities: Mapped[list["Celebrity"]] = relationship(
         secondary=association_table,

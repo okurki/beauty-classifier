@@ -24,7 +24,6 @@ class API(BaseModel):
 
 class ML(BaseModel):
     mlflow_tracking_url: str
-    scut_data_path: str
     remote_ip: str | None = None
 
 
@@ -66,11 +65,11 @@ class Config(BaseSettings):
             and self.db.prod_uri.replace("postgresql://", "postgresql+asyncpg://")
             or self.db.dev_uri.replace("sqlite://", "sqlite+aiosqlite://")
         )
-        self.db.__delattr__("prod_uri")
-        self.db.__delattr__("dev_uri")
 
 
 config = Config()
 
-warnings.filterwarnings("ignore", category=FutureWarning)
+warnings.filterwarnings(
+    "ignore", category=FutureWarning, message="pynvml package is deprecated"
+)
 dotenv.load_dotenv()
