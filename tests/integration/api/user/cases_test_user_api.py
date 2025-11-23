@@ -6,7 +6,7 @@ from src.interfaces.api.v1.schemas import (
     UserCreate,
     UserRead,
     UserUpdate,
-    Inference,
+    InferenceCreate,
     IDMixin,
 )
 
@@ -14,9 +14,7 @@ from ..utils import APICase
 
 now = datetime.datetime.now()
 
-test_inference = Inference(
-    id=1,
-    user_id=2,
+test_inference = InferenceCreate(
     celebrities=[],
     attractiveness=0.5,
     timestamp=now,

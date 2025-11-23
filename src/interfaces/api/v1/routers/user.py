@@ -8,7 +8,6 @@ from src.interfaces.api.v1.schemas import (
     UserUpdate,
     UserRead,
     Token,
-    IDMixin,
 )
 from src.interfaces.api.v1.exc import (
     NotFoundHTTPException,
@@ -26,8 +25,8 @@ user_router = APIRouter(
 @user_router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_user(
     data: UserCreate,
-    service: UserService = Depends(UserService.dep()),
-) -> IDMixin:
+    service: Annotated[UserService, Depends(UserService.dep())],
+) -> UserRead:
     id = await service.create(**data.model_dump())
     if not id:
         raise AlreadyExistsHTTPException
@@ -36,7 +35,7 @@ async def create_user(
 
 @user_router.get("/")
 async def get_users(
-    service: UserService = Depends(UserService.dep()),
+    service: Annotated[UserService, Depends(UserService.dep())],
     page: int = Query(1, description="Page number"),
     limit: int = Query(100, description="Items per page"),
 ) -> list[UserRead]:
@@ -46,7 +45,7 @@ async def get_users(
 @user_router.get("/{id}")
 async def get_user(
     id: int,
-    service: UserService = Depends(UserService.dep()),
+    service: Annotated[UserService, Depends(UserService.dep())],
 ) -> UserRead:
     user = await service.get(id)
     if not user:
@@ -56,7 +55,9 @@ async def get_user(
 
 @user_router.patch("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 async def update_user(
-    id: int, user: UserUpdate, service: UserService = Depends(UserService.dep())
+    id: int,
+    user: UserUpdate,
+    service: Annotated[UserService, Depends(UserService.dep())],
 ) -> None:
     res = await service.update(id, **user.model_dump())
     if res is None:
@@ -68,7 +69,7 @@ async def update_user(
 @user_router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user(
     id: int,
-    service: UserService = Depends(UserService.dep()),
+    service: Annotated[UserService, Depends(UserService.dep())],
 ) -> None:
     deleted = await service.delete(id)
     if deleted is False:
@@ -78,5 +79,11 @@ async def delete_user(
 
 
 @user_router.get("/me/")
-async def my_id(token: Annotated[Token, Depends(JWTAuth())]) -> IDMixin:
-    return IDMixin(id=token.user_id)
+async def me(
+    token: Annotated[Token, Depends(JWTAuth())],
+    service: Annotated[UserService, Depends(UserService.dep())],
+) -> UserRead:
+    user = await service.get(token.user_id)
+    if not user:
+        raise NotFoundHTTPException
+    return user

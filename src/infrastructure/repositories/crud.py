@@ -1,7 +1,7 @@
 from abc import ABC
 from typing import TypeVar, Annotated, get_args
 
-from sqlalchemy import select, delete, update, insert
+from sqlalchemy import select, delete, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends
@@ -13,9 +13,11 @@ ModelType = TypeVar("ModelType", bound=EntityBase)
 
 
 class CRUDRepository[ModelType: EntityBase](ABC):
+    model: type[ModelType]
+
     def __init__(self, db: Annotated[AsyncSession, Depends(DB.session)]):
         self.db = db
-        self.model: type[ModelType] = get_args(self.__class__.__orig_bases__[0])[0]
+        self.model = get_args(self.__class__.__orig_bases__[0])[0]
 
     async def get(self, id: int):
         query = select(self.model).where(self.model.id == id)
@@ -28,13 +30,14 @@ class CRUDRepository[ModelType: EntityBase](ABC):
         return list(result.scalars().all())
 
     async def create(self, **data):
-        query = insert(self.model).values(data).returning(self.model)
         try:
-            result = await self.db.execute(query)
+            instance = self.model(**data)
+            self.db.add(instance)
+            await self.db.flush()
+            await self.db.refresh(instance)
+            return instance
         except IntegrityError:
-            self.db.rollback()
             return None
-        return result.scalar_one_or_none()
 
     async def update(self, id: int, **data):
         query = update(self.model).where(self.model.id == id).values(data)

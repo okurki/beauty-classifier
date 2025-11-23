@@ -14,6 +14,8 @@ ReadSchemaT = TypeVar("ReadSchemaT", bound=BaseModel)
 
 
 class CRUDService(Generic[RepositoryT, ReadSchemaT], ABC):
+    repository: RepositoryT
+
     def __init__(self, repository: RepositoryT, read_schema: type[ReadSchemaT]):
         self.repository = repository
         self.read_schema = read_schema

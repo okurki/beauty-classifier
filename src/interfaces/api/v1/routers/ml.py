@@ -2,7 +2,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, UploadFile, HTTPException, status
 
 from src.interfaces.api.v1.middleware import JWTAuth
-from src.interfaces.api.v1.schemas import Token, Inference
+from src.interfaces.api.v1.schemas import Token, InferenceRead
 from ..schemas import AttractivenessPrediction, SimilarityPrediction
 from src.application.services.ml import MLService
 
@@ -12,7 +12,7 @@ ml_router = APIRouter(prefix="/ml", tags=["ML"])
 @ml_router.post("/attractiveness")
 async def predict(
     image_file: UploadFile,
-    service: MLService = Depends(MLService.dep()),
+    service: Annotated[MLService, Depends(MLService.dep())],
 ) -> AttractivenessPrediction:
     if not image_file.content_type:
         raise HTTPException(status_code=400, detail="Invalid file")
@@ -37,7 +37,7 @@ async def predict(
 @ml_router.post("/celebrities")
 async def get_celebrities(
     image_file: UploadFile,
-    service: MLService = Depends(MLService.dep()),
+    service: Annotated[MLService, Depends(MLService.dep())],
 ) -> list[SimilarityPrediction]:
     if not image_file.content_type:
         raise HTTPException(status_code=400, detail="Invalid file")
@@ -48,7 +48,7 @@ async def get_celebrities(
 
     image_bytes = await image_file.read()
 
-    celebrities = service.predict_celebrities(image_bytes)
+    celebrities = service.get_celebrities(image_bytes)
 
     if not celebrities:
         raise HTTPException(
@@ -63,8 +63,8 @@ async def get_celebrities(
 async def create_inference(
     image_file: UploadFile,
     token: Annotated[Token, Depends(JWTAuth())],
-    service: MLService = Depends(MLService.dep()),
-) -> Inference:
+    service: Annotated[MLService, Depends(MLService.dep())],
+) -> InferenceRead:
     if not image_file.content_type:
         raise HTTPException(status_code=400, detail="Invalid file")
     if not image_file.content_type.startswith("image/"):
@@ -74,7 +74,7 @@ async def create_inference(
 
     image_bytes = await image_file.read()
 
-    inference = service.create_inference(token.user_id, image_bytes)
+    inference = await service.create_inference(token.user_id, image_bytes)
 
     if not inference:
         raise HTTPException(

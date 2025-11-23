@@ -23,8 +23,8 @@ class SecurityService:
     def verify_password(cls, plain_password: str, hashed_password: str) -> bool:
         return cls._password_hash.verify(plain_password, hashed_password)
 
-    @staticmethod
-    def issue_token(*_, **data) -> Token:
+    @classmethod
+    def issue_token(cls, **data) -> Token:
         token_data = data.copy()
 
         now = int(datetime.now(timezone.utc).timestamp())
@@ -38,8 +38,8 @@ class SecurityService:
         token_data["token"] = jwt_token
         return Token(**token_data)
 
-    @staticmethod
-    def decode_token(raw_token: str) -> Token | None:
+    @classmethod
+    def decode_token(cls, raw_token: str) -> Token | None:
         try:
             jwt_token: dict = jwt.decode(
                 raw_token,
@@ -47,12 +47,10 @@ class SecurityService:
                 algorithms=[config.auth.algorithm],
                 options={"verify_exp": True},
             )
-            jwt_token.update({"type": "Bearer", "token": raw_token})
-            return Token(**jwt_token)
+            return Token(**jwt_token, token=raw_token)
         except (InvalidTokenError, ValidationError) as e:
             if isinstance(e, ValidationError):
                 logger.debug(f"Unable to coerce to Token model: {jwt_token}")
-                raise
             elif isinstance(e, InvalidTokenError):
                 logger.debug(f"Invalid token: {raw_token}")
             return None

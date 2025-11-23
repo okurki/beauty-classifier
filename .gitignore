@@ -44,3 +44,4 @@ logs
 # dev and test dbs
 *.sqlite3
 mlruns/
+openapi.json

@@ -3,7 +3,7 @@ import logging
 
 
 from src.infrastructure.repositories import UserRepository
-from src.interfaces.api.v1.schemas import UserCreate, UserRead, Inference
+from src.interfaces.api.v1.schemas import UserCreate, UserRead, InferenceRead
 from .crud import CRUDService
 from .security import SecurityService
 
@@ -28,7 +28,7 @@ class UserService(CRUDService[UserRepository, UserRead]):
 
     async def get_inferences(self, id: int):
         return [
-            Inference.model_validate(inference)
+            InferenceRead.model_validate(inference)
             for inference in await self.repository.get_inferences(id)
         ]
 

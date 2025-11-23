@@ -1,4 +1,5 @@
 from enum import StrEnum
+from datetime import datetime
 
 from sqlalchemy import ForeignKey, Table, Column, Enum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -45,8 +46,9 @@ class Celebrity(EntityBase):
 class Inference(EntityBase):
     __tablename__ = "inferences"
     attractiveness: Mapped[float] = mapped_column(nullable=False)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     user: Mapped["User"] = relationship(back_populates="inferences")
+    timestamp: Mapped[datetime] = mapped_column(nullable=False)
     celebrities: Mapped[list["Celebrity"]] = relationship(
         secondary=association_table,
         back_populates="inferences",

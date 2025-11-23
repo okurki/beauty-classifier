@@ -1,8 +1,8 @@
 from typing import override
-from sqlalchemy import select, delete, insert
+from sqlalchemy import select, delete
 from sqlalchemy.orm import selectinload
 
-from src.infrastructure.database.models import User, Inference, Celebrity
+from src.infrastructure.database.models import User, Inference
 from .crud import CRUDRepository
 
 
@@ -25,9 +25,7 @@ class UserRepository(CRUDRepository[User]):
         query = (
             select(Inference)
             .where(Inference.user_id == id)
-            .options(
-                selectinload(Inference.celebrities), selectinload(Inference.picture)
-            )
+            .options(selectinload(Inference.celebrities))
         )
         result = await self.db.execute(query)
         return list(result.scalars().all())
@@ -44,29 +42,6 @@ class UserRepository(CRUDRepository[User]):
         if last_inference:
             return last_inference.picture
         return None
-
-    async def create_inference(
-        self,
-        user_id: int,
-        photo: bytes,
-        attractiveness: float,
-        celebrity_names: list[str],
-    ) -> Inference | None:
-        query = select(Celebrity).where(Celebrity.name.in_(celebrity_names))
-        result = await self.db.execute(query)
-        celebrities = result.scalars().all()
-        query = (
-            insert(Inference)
-            .values(
-                user_id=user_id,
-                photo=photo,
-                attractiveness=attractiveness,
-                celebrities=celebrities,
-            )
-            .returning(Inference)
-        )
-        result = await self.db.execute(query)
-        return result.scalar_one_or_none()
 
     async def delete_inference(self, id: int) -> bool:
         query = delete(Inference).where(Inference.id == id)

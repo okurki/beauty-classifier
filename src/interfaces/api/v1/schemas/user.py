@@ -6,11 +6,15 @@ from .base import Base, IDMixin
 from .celebrity import Celebrity
 
 
-class Inference(Base, IDMixin):
-    user_id: int = Field(description="User ID")
+class InferenceCreate(Base):
+    user_id: int = Field(examples=[1], description="User ID")
     celebrities: list[Celebrity] = Field(description="List of celebrities")
-    attractiveness: float = Field(examples=[4.0], description="Attractiveness score")
+    attractiveness: float = Field(examples=[0.5], description="Attractiveness score")
     timestamp: datetime = Field(examples=[datetime.now()], description="Inference date")
+
+
+class InferenceRead(InferenceCreate, IDMixin):
+    pass
 
 
 class UserBase(Base):
@@ -30,4 +34,20 @@ class UserUpdate(UserBase):
 
 
 class UserRead(IDMixin, UserBase):
-    inferences: list[Inference] = Field([], description="List of inferences")
+    inferences: list[InferenceRead] = Field(
+        [],
+        description="List of inferences",
+        examples=[
+            [
+                InferenceRead(
+                    id=1,
+                    user_id=1,
+                    celebrities=[
+                        Celebrity(name="name", img_path="/celebrities_pretty/name.jpg")
+                    ],
+                    attractiveness=0.5,
+                    timestamp=datetime.now(),
+                )
+            ]
+        ],
+    )
