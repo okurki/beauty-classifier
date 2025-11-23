@@ -1,0 +1,6 @@
+outs:
+- md5: 465c2acaf9a2d5cbd95dc66eb07d9d00.dir
+  size: 509976696
+  nfiles: 259
+  hash: md5
+  path: celebrities_pretty

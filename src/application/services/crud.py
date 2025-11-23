@@ -48,5 +48,7 @@ class CRUDService(Generic[RepositoryT, ReadSchemaT], ABC):
         repo = get_args(cls.__orig_bases__[0])[0]
         schema = get_args(cls.__orig_bases__[0])[1]
 
-        service_factory = lambda repo=Depends(repo): cls(repo, schema)
+        def service_factory(reop=Depends(repo)):
+            return cls(reop, schema)
+
         return service_factory
