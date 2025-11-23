@@ -12,7 +12,6 @@ class Logging(BaseModel):
 
     max_bytes: int
     backup_count: int
-    file: str
 
     @property
     def prod_config(self):
@@ -88,25 +87,17 @@ class Logging(BaseModel):
                     "formatter": "colored",
                     "stream": sys.stdout,
                 },
-                "file": {
-                    "class": "logging.handlers.RotatingFileHandler",
-                    "level": self.level,
-                    "formatter": "plain",
-                    "filename": "logs/app_dev.log",
-                    "maxBytes": self.max_bytes,  # 10MB
-                    "backupCount": self.backup_count,
-                },
             },
-            "root": {"level": self.level, "handlers": ["console", "file"]},
+            "root": {"level": self.level, "handlers": ["console"]},
             "loggers": {
                 "uvicorn": {
                     "level": self.level,
-                    "handlers": ["console", "file"],
+                    "handlers": ["console"],
                     "propagate": False,
                 },
                 "mlflow": {
                     "level": self.level,
-                    "handlers": ["console", "file"],
+                    "handlers": ["console"],
                     "propagate": False,
                 },
             },

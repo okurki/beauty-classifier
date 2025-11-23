@@ -55,7 +55,7 @@ class MLService(CRUDService[InferenceRepository, Inference]):
                 name=" ".join(
                     [name_part.capitalize() for name_part in celeb.name.split("_")]
                 ),
-                img_path=f"/celebrities/{celeb.name}",
+                img_path=f"/celebrities_pretty/{celeb.name}",
             )
             for celeb in celebrities
         ]

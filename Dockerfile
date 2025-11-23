@@ -10,7 +10,7 @@ COPY . .
 RUN uv sync --no-dev
 
 # pull models
-RUN uv run dvc pull models/celebrity_matcher.pt models/attractiveness_classifier.pt
+RUN uv run dvc pull models/celebrity_matcher.pt models/attractiveness_classifier.pt datasets/celebrities_pretty
 
 # RUNTIME
 FROM python:3.13-slim

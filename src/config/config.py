@@ -55,11 +55,6 @@ class Config(BaseSettings):
         self.logging.config = (
             self.prod and self.logging.prod_config or self.logging.dev_config
         )
-        self.logging.file = (
-            self.prod
-            and self.logging.file
-            or self.logging.file.replace(".log", "_dev.log")
-        )
         self.db.uri = (
             self.prod
             and self.db.prod_uri.replace("postgresql://", "postgresql+asyncpg://")

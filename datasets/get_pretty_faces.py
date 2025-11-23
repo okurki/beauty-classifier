@@ -10,12 +10,15 @@ def download_wikimedia_images(
     debug: bool = False,
 ):
     agent_header = {"User-Agent": "CringeBot/1.0 (https://github.com/sasaSilver)"}
+
     pbar = tqdm(filenames)
     for i, name in enumerate(pbar):
+        pbar.set_description(f"Processing {i + 1}/{len(filenames)}: {name}")
+
         search_name = " ".join(
             map(lambda name: name.capitalize(), name.replace(".jpg", "").split("_"))
         )
-        pbar.set_description(f"Processing {i + 1}/{len(filenames)}: {name}")
+
         url = "https://commons.wikimedia.org/w/api.php"
         params = {
             "action": "query",
@@ -28,9 +31,9 @@ def download_wikimedia_images(
         res.raise_for_status()
         response = res.json()
         debug and print(f"Got response: {response}")
+
         file_title = response["query"]["search"][0]["title"]
         debug and print(f"Got file title: {file_title}")
-        # Get file URL
         params = {
             "action": "query",
             "format": "json",
@@ -41,20 +44,24 @@ def download_wikimedia_images(
         res = requests.get(url, params=params, headers=agent_header)
         res.raise_for_status()
         response = res.json()
+
         page = next(iter(response["query"]["pages"].values()))
         if "imageinfo" not in page:
             raise ValueError(f"No image info in page: {page}")
+
         img_url = page["imageinfo"][0]["url"]
         debug and print(f"Got image URL: {img_url}")
-        # Download image
+
         img_data = requests.get(img_url, headers=agent_header).content
         filename = f"{download_folder}/{name}.jpg"
+
         with open(filename, "wb") as f:
             written = f.write(img_data)
             if written == 0:
                 raise ValueError("Failed to write image data")
+
         debug and print(f"Downloaded from Wikimedia: {filename}")
-        time.sleep(0.5)  # Rate limiting
+        time.sleep(0.5)  # rate limit
 
 
 DEBUG = False
