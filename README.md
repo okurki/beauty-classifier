@@ -58,4 +58,4 @@ Run `make help` for more commands
 Run `make test` to execute test suite
 
 ## Project Timeline
-5 two-week sprints concluding November 9, 2025, focusing on iterative development of ML models, mobile integration, and deployment infrastructure.
+5 two-week sprints concluding November 25, 2025, focusing on iterative development of ML models, mobile integration, and deployment infrastructure.

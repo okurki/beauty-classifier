@@ -12,8 +12,12 @@ jobs:
     - name: Pull code
       run: |
           git pull
+    - name: Create secret files
+      run: |
+          echo "${{ secrets.ENV_FILE }}" > .env
+          echo "${{ secrets.DVC_LOCAL_CONFIG_FILE }}" > .dvc/config.local
     - name: Pull dvc data
       run: |
           dvc pull
     - name: Stop and restart containers
-      run: docker compose down && docker compose build && docker compose up --remove-orphans -d
+      run: docker compose -f .\.infra\docker-compose.yml down && docker compose -f .\.infra\docker-compose.yml build && docker compose -f .\.infra\docker-compose.yml up --remove-orphans -d

@@ -1,18 +1,20 @@
 services:
   api:
     build:
-      dockerfile: Dockerfile
+      context: ../
+      dockerfile: .infra/Dockerfile
     ports:
       - "8000:8000"
+    environment:
+      - ENV=prod
     depends_on:
       - postgres
     command: [
-      ".venv/bin/alembic", "upgrade", "head", "&&",
-      ".venv/bin/python", "-m", "src.interfaces.api.v1"
+      ".venv/bin/python","-m", "src.interfaces.api.v1"
     ]
   
   postgres:
-    image: postgres:latest
+    image: postgres:17-alpine
     restart: always
     environment:
       POSTGRES_USER: postgres

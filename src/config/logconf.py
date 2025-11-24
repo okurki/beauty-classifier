@@ -10,9 +10,6 @@ class Logging(BaseModel):
     config: dict = {}  # set in Config.__post_init__
     level: str = "INFO"  # this too
 
-    max_bytes: int
-    backup_count: int
-
     @property
     def prod_config(self):
         class JsonFormatter(logging.Formatter):
