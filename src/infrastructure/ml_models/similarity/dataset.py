@@ -1,4 +1,3 @@
-# src/ml_models/similarity/dataset.py
 import os
 import json
 import hashlib
@@ -8,12 +7,12 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from PIL import Image
+from src.config import config
 
-# Корень датасета: внутри — папки по именам знаменитостей
-CELEB_DATA_PATH = "datasets/open_famous_people_faces"
-CLASSES_FILE = os.path.join(CELEB_DATA_PATH, "classes.json")
 
 IMG_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
+
+CLASSES_FILE = "/classes.json"
 
 
 def _iter_classes(root: str) -> List[str]:
@@ -63,7 +62,7 @@ class CelebrityFolderDataset(Dataset):
 
     def __init__(
         self,
-        root: str = CELEB_DATA_PATH,
+        root: str = config.ml.celebrities_dataset_dir,
         split: str = "train",
         transform=None,
         val_ratio: float = 0.1,
@@ -81,7 +80,9 @@ class CelebrityFolderDataset(Dataset):
         self.seed = seed
 
         # Маппинг классов
-        self._classes_file = classes_file or CLASSES_FILE
+        self._classes_file = (
+            classes_file or config.ml.celebrities_dataset_dir + CLASSES_FILE
+        )
         if label2id is not None:
             self.label2id = label2id
         else:
@@ -167,23 +168,23 @@ def get_data_loaders(
 
     # Train сначала — формируем label2id и сохраняем classes.json
     train_ds = CelebrityFolderDataset(
-        root=CELEB_DATA_PATH,
+        root=config.ml.celebrities_dataset_dir,
         split="train",
         transform=train_transform,
         val_ratio=val_ratio,
         seed=seed,
-        classes_file=CLASSES_FILE,
+        classes_file=config.ml.celebrities_dataset_dir + CLASSES_FILE,
     )
 
     # Val — используем тот же маппинг индексов
     val_ds = CelebrityFolderDataset(
-        root=CELEB_DATA_PATH,
+        root=config.ml.celebrities_dataset_dir,
         split="val",
         transform=val_transform,
         val_ratio=val_ratio,
         seed=seed,
         label2id=train_ds.label2id,
-        classes_file=CLASSES_FILE,
+        classes_file=config.ml.celebrities_dataset_dir + CLASSES_FILE,
     )
 
     train_loader = DataLoader(

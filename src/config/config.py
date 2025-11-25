@@ -25,6 +25,7 @@ class API(BaseModel):
 class ML(BaseModel):
     mlflow_tracking_url: str
     remote_ip: str | None = None
+    celebrities_dataset_dir: str = "datasets/open_famous_people_faces"
 
 
 class Auth(BaseModel):

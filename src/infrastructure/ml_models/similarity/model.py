@@ -15,19 +15,20 @@ from PIL import Image
 
 from ..base_model import ModelBase
 from src.interfaces.api.v1.schemas.similarity import SimilarityPrediction
+from src.config import config
 
 try:
     import mlflow
     import torchmetrics
     from tqdm import tqdm
 
-    # наш новый датасет на папочной структуре
-    from .dataset import get_data_loaders, CLASSES_FILE
+    from .dataset import get_data_loaders
 except ImportError:
     pass
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
 logger = logging.getLogger(__name__)
+CLASSES_FILE = "/classes.json"
 
 
 def _load_id2label(path: str) -> Optional[Dict[int, str]]:
@@ -73,7 +74,7 @@ class CelebrityMatcherModel(ModelBase):
 
         # === ВАЖНО: путь к classes.json синхронен с dataset.py ===
         self._classes_file = (
-            classes_file or CLASSES_FILE
+            classes_file or config.ml.celebrities_dataset_dir + CLASSES_FILE
         )  # datasets/open_famous_people_faces/classes.json
         self.id2label = _load_id2label(self._classes_file)
         self.num_classes = len(self.id2label) if self.id2label else None
@@ -170,8 +171,6 @@ class CelebrityMatcherModel(ModelBase):
 
         train_loader, val_loader = get_data_loaders()
         num_classes = train_loader.dataset.num_classes
-
-        self._ensure_head(num_classes=num_classes)
 
         if hasattr(train_loader.dataset, "id2label"):
             self.id2label = train_loader.dataset.id2label
