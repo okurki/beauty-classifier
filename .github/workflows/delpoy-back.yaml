@@ -12,10 +12,10 @@ jobs:
     - name: Pull code
       run: |
           git pull
-    - name: Create secret files
-      run: |
-          echo "${{ secrets.ENV_FILE }}" > .env
-          echo "${{ secrets.DVC_LOCAL_CONFIG_FILE }}" > .dvc/config.local
+    # - name: Create secret files
+    #   run: |
+    #       echo "${{ secrets.ENV_FILE }}" > .env
+    #       echo "${{ secrets.DVC_LOCAL_CONFIG_FILE }}" > .dvc/config.local
     - name: Pull dvc data
       run: |
           dvc pull
