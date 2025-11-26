@@ -12,7 +12,4 @@ RUN uv sync --no-dev
 # copy src files
 COPY . .
 
-# pull models
-RUN .venv/bin/dvc pull models/celebrity_matcher.pt models/attractiveness_classifier.pt datasets/celebrities_pretty
-
 EXPOSE 8000
