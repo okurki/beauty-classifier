@@ -9,10 +9,10 @@ COPY pyproject.toml ./
 # install dependencies
 RUN uv sync --no-dev
 
-# pull models
-RUN uv run dvc pull models/celebrity_matcher.pt models/attractiveness_classifier.pt datasets/celebrities_pretty
-
 # copy src files
 COPY . .
+
+# pull models
+RUN .venv/bin/dvc pull models/celebrity_matcher.pt models/attractiveness_classifier.pt datasets/celebrities_pretty
 
 EXPOSE 8000
