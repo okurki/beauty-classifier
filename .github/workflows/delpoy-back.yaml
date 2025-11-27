@@ -1,23 +1,26 @@
-name: Deploy to VM
-
-on:
-  push:
-    branches: [ main ]
-
 jobs:
   deploy:
     runs-on: ml-vm
+    defaults:
+      run:
+        working-directory: ./beauty-classifier
     
     steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
     - name: Pull code
       run: |
-          git pull
-    # - name: Create secret files
-    #   run: |
-    #       echo "${{ secrets.ENV_FILE }}" > .env
-    #       echo "${{ secrets.DVC_LOCAL_CONFIG_FILE }}" > .dvc/config.local
+        git pull
+    
+    - name: Create secret files
+      run: |
+          echo "${{ secrets.ENV_FILE }}" > .env
+          echo "${{ secrets.DVC_LOCAL_CONFIG_FILE }}" > .dvc/config.local
+    
     - name: Pull dvc data
       run: |
-          dvc pull
+        dvc pull
+
     - name: Stop and restart containers
       run: docker compose -f .infra/docker-compose.yml down && docker compose -f .infra/docker-compose.yml build && docker compose -f .infra/docker-compose.yml up --remove-orphans -d
