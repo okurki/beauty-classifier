@@ -7,9 +7,6 @@ on:
 jobs:
   deploy:
     runs-on: ml-vm
-    defaults:
-      run:
-        working-directory: ./beauty-classifier
     
     steps:
     - name: Checkout code
