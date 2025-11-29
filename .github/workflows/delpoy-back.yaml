@@ -18,6 +18,7 @@ jobs:
     - name: Pull code
       run: |
         git pull
+        cd beauty-classifier
     
     - name: Create secret files
       run: |

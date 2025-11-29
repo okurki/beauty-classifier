@@ -7,6 +7,8 @@ services:
       - "8000:8000"
     environment:
       - ENV=prod
+    env_file:
+      - .env
     depends_on:
       - postgres
     command: [
