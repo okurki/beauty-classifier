@@ -1,5 +1,5 @@
 outs:
-- md5: 60f4fe62eac35ae2ceeff3ff182b9c7b
+- md5: 6f8a39e2642a3a315af0eb39f88efb92
   size: 94829083
   hash: md5
   path: celebrity_matcher.pt

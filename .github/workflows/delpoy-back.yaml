@@ -19,7 +19,7 @@ jobs:
     
     - name: Pull dvc data
       run: |
-        dvc pull
+        dvc pull --force
 
     - name: Stop and restart containers
       run: docker compose -f .infra/docker-compose.yml down && docker compose -f .infra/docker-compose.yml build && docker compose -f .infra/docker-compose.yml up --remove-orphans -d

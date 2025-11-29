@@ -54,3 +54,9 @@ train-attractiveness:
 
 eval-attractiveness:
 	uv run -m src.interfaces.cli attractiveness --eval
+
+train-celebrities:
+	uv run -m src.interfaces.cli celebrity --train
+
+eval-celebrities:
+	uv run -m src.interfaces.cli similarity --eval
