@@ -5,10 +5,10 @@ services:
       dockerfile: .infra/Dockerfile
     ports:
       - "8000:8000"
-    environment:
-      - ENV=prod
     env_file:
       - .env
+    environment:
+      - ENV=prod
     depends_on:
       - postgres
     command: [

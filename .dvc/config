@@ -1,5 +1,5 @@
 [core]
     autostage = true
     remote = vmsshremote
-[remote "vmsshremote"]
+['remote "vmsshremote"']
     ask_password = true
