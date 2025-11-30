@@ -58,7 +58,7 @@ class MLService(CRUDService[InferenceRepository, InferenceCreate]):
         except Exception as e:
             logger.error(f"Failed to load feedback weights: {e}")
 
-    async def get_celebrities(self, image: bytes, top_k: int | None = None, apply_feedback: bool = True):
+    async def get_celebrities(self, image: bytes, top_k: int | None = None, apply_feedback: bool = True, use_rl: bool = True):
         if not image:
             logger.debug("No image provided")
             return None
@@ -66,7 +66,7 @@ class MLService(CRUDService[InferenceRepository, InferenceCreate]):
             logger.error("Celebrity matcher not loaded")
             celebrity_matcher.load()
         try:
-            predictions = celebrity_matcher.predict(image, top_k, apply_feedback=apply_feedback)
+            predictions = celebrity_matcher.predict(image, top_k, apply_feedback=apply_feedback, use_rl=use_rl)
         except ValueError as e:
             logger.debug(f"Could not process image: {e}")
             return None

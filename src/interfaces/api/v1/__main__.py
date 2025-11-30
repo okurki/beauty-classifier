@@ -21,6 +21,19 @@ async def lifespan(app: FastAPI):
     with open("static/index.html", "r", encoding="utf-8") as f:
         app.state.welcome_page_html = f.read()
     async with DB.lifespan():
+        # Load feedback weights from database after DB is ready
+        try:
+            from src.application.services.ml import MLService
+            from src.infrastructure.repositories import InferenceRepository
+            
+            # Create a temporary session to load feedback weights
+            async with DB.async_sessionmaker() as session:
+                ml_service = MLService(InferenceRepository(session))
+                await ml_service.load_feedback_weights()
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(f"Could not load feedback weights on startup: {e}")
+        
         yield
 
 
