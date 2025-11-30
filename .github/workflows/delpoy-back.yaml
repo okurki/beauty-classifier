@@ -23,7 +23,5 @@ jobs:
 
     - name: Stop and restart containers
       run: |
-        docker compose -f .infra/docker-compose.yml down && \
-        docker compose -f .infra/docker-compose.yml build && \
-        docker compose -f .infra/docker-compose.yml up --remove-orphans -d && \
-        docker compose -f .infra/docker-compose.mlflow.yml up -d --remove-orphans
+        docker compose -f .infra/docker-compose.yml up --build -d && \
+        docker compose -f .infra/docker-compose.mlflow.yml up -d
