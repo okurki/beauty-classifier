@@ -22,4 +22,8 @@ jobs:
         dvc pull --force
 
     - name: Stop and restart containers
-      run: docker compose -f .infra/docker-compose.yml down && docker compose -f .infra/docker-compose.yml build && docker compose -f .infra/docker-compose.yml up --remove-orphans -d
+      run: |
+        docker compose -f .infra/docker-compose.yml down && \
+        docker compose -f .infra/docker-compose.yml build && \
+        docker compose -f .infra/docker-compose.yml up --remove-orphans -d && \
+        docker compose -f .infra/docker-compose.mlflow.yml up
