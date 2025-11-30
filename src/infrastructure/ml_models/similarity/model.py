@@ -40,13 +40,6 @@ def _load_id2label(path: str) -> Optional[Dict[int, str]]:
 
 
 class CelebrityMatcherModel(ModelBase):
-    """
-    Классификация знаменитостей.
-    - ResNet50 (замороженный бекбон) + кастомная голова
-    - Лосс: CrossEntropy
-    - Метрики: acc@1, acc@5, macro-F1
-    """
-
     _name: str = "celebrity_matcher"
 
     def __init__(
@@ -58,12 +51,9 @@ class CelebrityMatcherModel(ModelBase):
         super().__init__()
         self.top_k = top_k
 
-        # Трансформации для инференса
         self._transform = transforms.Compose(
             [
-                transforms.Resize(
-                    (160, 160)
-                ),  # InceptionResnetV1 expects (160,160)x(160,160)
+                transforms.Resize((160, 160)),
                 transforms.CenterCrop((160, 160)),
                 transforms.ToTensor(),
                 transforms.Normalize(
@@ -72,14 +62,12 @@ class CelebrityMatcherModel(ModelBase):
             ]
         )
 
-        # === ВАЖНО: путь к classes.json синхронен с dataset.py ===
         self._classes_file = (
             classes_file or config.ml.celebrities_dataset_dir + CLASSES_FILE
         )  # datasets/open_famous_people_faces/classes.json
         self.id2label = _load_id2label(self._classes_file)
         self.num_classes = len(self.id2label) if self.id2label else None
 
-        # Бекбон + голова
         backbone = self._load_vggface2_backbone()
 
         for p in backbone.parameters():
@@ -94,7 +82,7 @@ class CelebrityMatcherModel(ModelBase):
             out_features, eps=0.001, momentum=0.1, affine=True
         )
 
-        # Add the final classification layer
+        # the final classification layer
         backbone.logits = nn.Sequential(
             nn.ReLU(),
             nn.Dropout(0.3),
@@ -106,7 +94,6 @@ class CelebrityMatcherModel(ModelBase):
         self.loaded = False
 
     def _load_vggface2_backbone(self):
-        """Load VGGFace2 pretrained model from facenet-pytorch"""
         try:
             logger.info(
                 "Loading VGGFace2 pretrained InceptionResnetV1 from facenet-pytorch"
@@ -122,26 +109,6 @@ class CelebrityMatcherModel(ModelBase):
                 logger.error(f"Could not load any face recognition model: {e2}")
                 raise
 
-    # ---- helpers ----
-    def _ensure_head(self, num_classes: int, out_features: int = 512):
-        """Переинициализировать голову, если число классов стало известно/изменилось."""
-        if self.num_classes == num_classes:
-            return
-        in_features = (
-            self._model.fc[0].in_features
-            if isinstance(self._model.fc, nn.Sequential)
-            else self._model.fc.in_features
-        )
-        self._model.fc = nn.Sequential(
-            nn.Linear(in_features, out_features),
-            nn.ReLU(),
-            nn.Dropout(0.3),
-            nn.Linear(out_features, num_classes),
-        )
-        self._model.to(self._device)
-        self.num_classes = num_classes
-        logger.info(f"Classifier head reinitialized for {num_classes} classes.")
-
     def _setup_metrics(self, device, num_classes: int):
         acc1 = torchmetrics.Accuracy(task="multiclass", num_classes=num_classes).to(
             device
@@ -154,7 +121,6 @@ class CelebrityMatcherModel(ModelBase):
         ).to(device)
         return nn.ModuleDict({"acc1": acc1, "acc5": acc5, "f1_macro": f1m})
 
-    # ---- train / eval ----
     def train(
         self,
         epochs: int = 10,

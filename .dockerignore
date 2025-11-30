@@ -1,5 +1,6 @@
 datasets/
 !datasets/celebrities_pretty
+!datasets/open_famous_people_faces/classes.json
 .github
 tests/
 README.md

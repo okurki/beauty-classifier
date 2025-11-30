@@ -40,26 +40,11 @@ def _hash_split(relpath: str, seed: int) -> float:
     Позволяет делать стабильный сплит без хранения манифестов.
     """
     h = hashlib.md5((relpath + str(seed)).encode("utf-8")).hexdigest()
-    # возьмём первые 8 hex-символов как uint32
     val = int(h[:8], 16)
     return val / 0xFFFFFFFF
 
 
 class CelebrityFolderDataset(Dataset):
-    """
-    Датасет по папочной структуре:
-      datasets/open_famous_people_faces/
-        ├─ aaron_taylor_johnson/
-        │    ├─ face_detected_01ae6051.jpg
-        │    └─ ...
-        ├─ tom_hanks/
-        └─ ...
-
-    split: 'train' или 'val'
-    Сплит делается детерминированно (per-file) по хэшу пути и seed, баланс по классам сохраняется
-    автоматически, т.к. решение принимается для каждого файла внутри класса.
-    """
-
     def __init__(
         self,
         root: str = config.ml.celebrities_dataset_dir,
@@ -143,10 +128,6 @@ def get_data_loaders(
     val_ratio: float = 0.1,
     seed: int = 42,
 ):
-    """
-    Возвращает (train_loader, val_loader) из папочной структуры.
-    label2id фиксируем от train, чтобы индексы совпадали.
-    """
     train_transform = transforms.Compose(
         [
             transforms.Resize((160, 160)),
