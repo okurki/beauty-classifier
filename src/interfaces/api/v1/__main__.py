@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
 import uvicorn
+import uvicorn.config
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -9,12 +10,16 @@ from fastapi.staticfiles import StaticFiles
 from src.infrastructure.database import DB
 from src.infrastructure.ml_models import load_models
 from src.interfaces.api.v1.routers import routers
+from src.interfaces.api.v1.utils import setting_otlp
+from src.interfaces.api.v1.middleware import PrometheusMiddleware
 from src.config import config
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     load_models()
+    with open("static/index.html", "r", encoding="utf-8") as f:
+        app.state.welcome_page_html = f.read()
     async with DB.lifespan():
         yield
 
@@ -37,6 +42,8 @@ def create_app(lifespan: AsyncGenerator = lifespan) -> FastAPI:
         expose_headers=["*"],
     )
 
+    app.add_middleware(PrometheusMiddleware)
+
     for router in routers:
         app.include_router(router)
 
@@ -45,15 +52,22 @@ def create_app(lifespan: AsyncGenerator = lifespan) -> FastAPI:
         StaticFiles(directory="datasets/celebrities_pretty"),
         name="celebrities_pretty",
     )
-    app.mount("/", StaticFiles(directory="static", html=True), name="welcome page")
 
     return app
 
 
 if __name__ == "__main__":
+    app = create_app(lifespan)
+    setting_otlp(app, config.app_name, config.otlp_grpc_endpoint)
+
+    log_config = uvicorn.config.LOGGING_CONFIG
+    log_config["formatters"]["access"]["fmt"] = (
+        "%(asctime)s %(levelname)s [%(name)s] [%(filename)s:%(lineno)d] [trace_id=%(otelTraceID)s span_id=%(otelSpanID)s resource.service.name=%(otelServiceName)s] - %(message)s"
+    )
+
     uvicorn.run(
-        create_app(lifespan),
+        app,
         host=config.api.host,
         port=config.api.port,
-        log_config=config.logging.config,
+        log_config=log_config,
     )
