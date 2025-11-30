@@ -3,6 +3,23 @@
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{amsmath}
+\setbeamertemplate{footline}{}
+\setbeamercolor*{normal text}{fg=white!70,bg=black!80}
+\setbeamercolor*{structure}{fg=black}
+\setbeamercolor{title}{fg=white}
+\setbeamercolor*{alerted text}{fg=red!85!black}
+\setbeamercolor*{item projected}{use=item,fg=black,bg=item.fg!35}
+\setbeamercolor*{palette primary}{use=structure,fg=structure.fg}
+\setbeamercolor*{palette secondary}{use=structure,fg=structure.fg!95!black}
+\setbeamercolor*{palette tertiary}{use=structure,fg=structure.fg!90!black}
+\setbeamercolor*{palette quaternary}{use=structure,fg=structure.fg!95!black,bg=black!80}
+\setbeamercolor*{framesubtitle}{fg=white}
+
+\setbeamercolor*{block title}{parent=structure,bg=black!60}
+\setbeamercolor*{block body}{fg=white,bg=black!10}
+\setbeamercolor*{block title alerted}{parent=alerted text,bg=black!15}
+\setbeamercolor*{block title example}{parent=example text,bg=black!15}
+\usefonttheme{structuresmallcapsserif}
 \title{Face Analysis \& Recommendation System via Reinforcement Learning}
 \subtitle{Contextual Thompson Sampling for Personalized Celebrity Look-alike}
 \author{Ivan Chabanov \and Aleksandr Michailov \and Nikita Shiyanov}
@@ -10,6 +27,7 @@
 \date{\today}
 \usetheme{Madrid}
 \begin{document}
+\setbeamercolor{background canvas}{bg=black!80}
 \frame{\titlepage}
 % -------------------------------------------------------------------------
 % SECTION 1: Introduction & Problem Recap (1-2 minutes)
@@ -114,6 +132,12 @@
             \item \textbf{Design:} iOS (Cupertino) Design.
         \end{itemize}
     \end{columns}
+\end{frame}
+\begin{frame}{Technical Architecture}
+    \begin{figure}
+        \centering
+        \includegraphics[width=\textwidth]{arch.png}
+    \end{figure}
 \end{frame}
 \begin{frame}{ML Models and Pipeline}
     \begin{enumerate}
