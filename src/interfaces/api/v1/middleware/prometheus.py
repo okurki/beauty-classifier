@@ -42,6 +42,63 @@ REQUESTS_IN_PROGRESS = Gauge(
     ["method", "path", "app_name"],
 )
 
+# RL Agent Metrics
+RL_CUMULATIVE_REWARD = Gauge(
+    "rl_cumulative_reward",
+    "Cumulative reward (likes - dislikes) from RL agent",
+    ["app_name"],
+)
+RL_AVERAGE_REWARD = Gauge(
+    "rl_average_reward",
+    "Average reward per impression from RL agent",
+    ["app_name"],
+)
+RL_EXPLORATION_RATE = Gauge(
+    "rl_exploration_rate",
+    "Percentage of exploratory actions by RL agent",
+    ["app_name"],
+)
+RL_CTR = Gauge(
+    "rl_ctr",
+    "Click-through rate (feedback rate) for RL agent",
+    ["app_name"],
+)
+RL_LIKE_RATE = Gauge(
+    "rl_like_rate",
+    "Percentage of feedback that was positive",
+    ["app_name"],
+)
+RL_TOTAL_IMPRESSIONS = Counter(
+    "rl_total_impressions",
+    "Total number of celebrity impressions",
+    ["app_name"],
+)
+RL_TOTAL_LIKES = Counter(
+    "rl_total_likes",
+    "Total number of likes received",
+    ["app_name"],
+)
+RL_TOTAL_DISLIKES = Counter(
+    "rl_total_dislikes",
+    "Total number of dislikes received",
+    ["app_name"],
+)
+RL_CELEBRITY_ALPHA = Gauge(
+    "rl_celebrity_alpha",
+    "Beta distribution alpha parameter for celebrity",
+    ["celebrity_id", "celebrity_name", "app_name"],
+)
+RL_CELEBRITY_BETA = Gauge(
+    "rl_celebrity_beta",
+    "Beta distribution beta parameter for celebrity",
+    ["celebrity_id", "celebrity_name", "app_name"],
+)
+RL_CELEBRITY_MEAN_PROB = Gauge(
+    "rl_celebrity_mean_probability",
+    "Mean success probability for celebrity",
+    ["celebrity_id", "celebrity_name", "app_name"],
+)
+
 
 class PrometheusMiddleware(BaseHTTPMiddleware):
     def __init__(self, app: ASGIApp, app_name: str = "fastapi-app") -> None:
@@ -105,6 +162,54 @@ class PrometheusMiddleware(BaseHTTPMiddleware):
                 return route.path, True
 
         return request.url.path, False
+
+
+def update_rl_metrics(app_name: str = "fastapi-app") -> None:
+    """
+    Update Prometheus metrics from RL agent state.
+    Should be called periodically or after feedback updates.
+    """
+    from src.infrastructure.ml_models.rl.agent import rl_agent
+    
+    try:
+        stats = rl_agent.get_global_stats()
+        
+        # Update global metrics
+        RL_CUMULATIVE_REWARD.labels(app_name=app_name).set(stats["cumulative_reward"])
+        RL_AVERAGE_REWARD.labels(app_name=app_name).set(stats["average_reward"])
+        RL_EXPLORATION_RATE.labels(app_name=app_name).set(stats["exploration_rate"])
+        RL_CTR.labels(app_name=app_name).set(stats["ctr"])
+        RL_LIKE_RATE.labels(app_name=app_name).set(stats["like_rate"])
+        
+        # Update celebrity-specific metrics for top celebrities
+        top_celebrities = rl_agent.get_top_celebrities(top_k=20)
+        for celeb in top_celebrities:
+            celeb_id = str(celeb["celebrity_id"])
+            celeb_name = celeb["celebrity_name"]
+            
+            celeb_stats = rl_agent.get_celebrity_stats(celeb["celebrity_id"])
+            if celeb_stats:
+                RL_CELEBRITY_ALPHA.labels(
+                    celebrity_id=celeb_id,
+                    celebrity_name=celeb_name,
+                    app_name=app_name
+                ).set(celeb_stats["alpha"])
+                
+                RL_CELEBRITY_BETA.labels(
+                    celebrity_id=celeb_id,
+                    celebrity_name=celeb_name,
+                    app_name=app_name
+                ).set(celeb_stats["beta"])
+                
+                RL_CELEBRITY_MEAN_PROB.labels(
+                    celebrity_id=celeb_id,
+                    celebrity_name=celeb_name,
+                    app_name=app_name
+                ).set(celeb_stats["mean_probability"])
+    except Exception as e:
+        # Don't fail if metrics update fails
+        import logging
+        logging.getLogger(__name__).warning(f"Failed to update RL metrics: {e}")
 
 
 def setting_otlp(

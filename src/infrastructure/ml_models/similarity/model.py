@@ -4,7 +4,8 @@ import json
 import logging
 import warnings
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Dict, Optional, List
+from collections import defaultdict
 
 import torch
 import torch.nn as nn
@@ -16,6 +17,7 @@ from PIL import Image
 from ..base_model import ModelBase
 from src.interfaces.api.v1.schemas.similarity import SimilarityPrediction
 from src.config import config
+from ..rl.agent import rl_agent
 
 try:
     import mlflow
@@ -92,6 +94,11 @@ class CelebrityMatcherModel(ModelBase):
         self._model = backbone
         self._model.to(self._device)
         self.loaded = False
+        
+        # Feedback-based adjustment weights
+        # Maps celebrity_id to adjustment score (positive for likes, negative for dislikes)
+        self._feedback_weights: Dict[int, float] = defaultdict(float)
+        self._feedback_counts: Dict[int, int] = defaultdict(int)
 
     def _load_vggface2_backbone(self):
         try:
@@ -320,11 +327,113 @@ class CelebrityMatcherModel(ModelBase):
 
         return final
 
+    def update_feedback_weights(self, celebrity_name: str, feedback_score: float):
+        """
+        Update feedback weights for a celebrity.
+        
+        Args:
+            celebrity_name: Name of the celebrity (e.g., "john_doe")
+            feedback_score: +1 for like, -1 for dislike
+        """
+        # Find celebrity ID from name
+        celebrity_id = None
+        if self.id2label:
+            for cid, name in self.id2label.items():
+                if name == celebrity_name:
+                    celebrity_id = cid
+                    break
+        
+        if celebrity_id is not None:
+            self._feedback_weights[celebrity_id] += feedback_score
+            self._feedback_counts[celebrity_id] += 1
+            logger.info(
+                f"Updated feedback for celebrity {celebrity_name} (id={celebrity_id}): "
+                f"weight={self._feedback_weights[celebrity_id]:.2f}, "
+                f"count={self._feedback_counts[celebrity_id]}"
+            )
+        else:
+            logger.warning(f"Celebrity {celebrity_name} not found in id2label mapping")
+
+    def get_feedback_adjustment(self, celebrity_id: int) -> float:
+        """
+        Calculate feedback-based adjustment for a celebrity.
+        
+        Returns a multiplier to apply to the prediction probability.
+        Positive feedback increases the score, negative feedback decreases it.
+        """
+        if celebrity_id not in self._feedback_weights:
+            return 1.0
+        
+        weight = self._feedback_weights[celebrity_id]
+        count = self._feedback_counts[celebrity_id]
+        
+        # Calculate adjustment factor
+        # More feedback = stronger adjustment, but with diminishing returns
+        # Formula: 1.0 + (weight / count) * min(count / 10, 1.0) * 0.2
+        # This means:
+        # - Average feedback (weight/count) ranges from -1 to +1
+        # - Adjustment is scaled by feedback count (up to 10 feedbacks)
+        # - Maximum adjustment is ±20% of original probability
+        if count > 0:
+            avg_feedback = weight / count
+            confidence_factor = min(count / 10.0, 1.0)
+            adjustment = 1.0 + (avg_feedback * confidence_factor * 0.2)
+            return max(0.1, adjustment)  # Ensure we don't go below 0.1
+        
+        return 1.0
+
+    def _extract_embedding(self, image: bytes) -> Optional[torch.Tensor]:
+        """
+        Extract facial embedding (context vector) for RL agent.
+        
+        Returns the 512-dim embedding before the final classification layer.
+        """
+        try:
+            with Image.open(io.BytesIO(image)) as img:
+                img_t = self._transform(img).unsqueeze(0).to(self._device)
+            
+            with torch.no_grad():
+                # Get embedding before final classification
+                # The model has: backbone -> last_linear -> last_bn -> logits
+                # We want the output after last_bn (512-dim embedding)
+                x = self._model.conv2d_1a(img_t)
+                x = self._model.conv2d_2a(x)
+                x = self._model.conv2d_2b(x)
+                x = self._model.maxpool_3a(x)
+                x = self._model.conv2d_3b(x)
+                x = self._model.conv2d_4a(x)
+                x = self._model.conv2d_4b(x)
+                x = self._model.repeat_1(x)
+                x = self._model.mixed_6a(x)
+                x = self._model.repeat_2(x)
+                x = self._model.mixed_7a(x)
+                x = self._model.repeat_3(x)
+                x = self._model.block8(x)
+                x = self._model.avgpool_1a(x)
+                x = self._model.dropout(x)
+                x = self._model.last_linear(x.view(x.shape[0], -1))
+                embedding = self._model.last_bn(x)
+                
+                return embedding
+        except Exception as e:
+            logger.warning(f"Could not extract embedding: {e}")
+            return None
+
     def predict(
-        self, image: bytes, top_k: int | None = None
+        self, 
+        image: bytes, 
+        top_k: int | None = None, 
+        apply_feedback: bool = True,
+        use_rl: bool = True,
     ) -> list[SimilarityPrediction]:
         """
         Возвращает top-k [{label, prob}], отсортированные по убыванию вероятности.
+        
+        Args:
+            image: Image bytes
+            top_k: Number of top predictions to return
+            apply_feedback: Whether to apply simple feedback-based adjustments
+            use_rl: Whether to use RL agent (Thompson Sampling)
         """
         if not self.loaded:
             self.load()
@@ -339,6 +448,7 @@ class CelebrityMatcherModel(ModelBase):
 
         self._model.eval()
         k = top_k or self.top_k
+        
         try:
             with Image.open(io.BytesIO(image)) as img:
                 img_t = self._transform(img).unsqueeze(0).to(self._device)
@@ -347,17 +457,77 @@ class CelebrityMatcherModel(ModelBase):
                 logits = self._model(img_t)
                 probs = F.softmax(logits, dim=1)
 
+            # Apply simple feedback-based adjustments
+            if apply_feedback and self._feedback_weights:
+                probs_adjusted = probs.clone()
+                for celebrity_id in range(probs.size(1)):
+                    adjustment = self.get_feedback_adjustment(celebrity_id)
+                    probs_adjusted[0, celebrity_id] *= adjustment
+                
+                # Renormalize probabilities
+                probs_adjusted = probs_adjusted / probs_adjusted.sum(dim=1, keepdim=True)
+                probs = probs_adjusted
+
             values, indices = torch.topk(probs, k=min(k, probs.size(1)), dim=1)
             values = values.squeeze(0).cpu().tolist()
             indices = indices.squeeze(0).cpu().tolist()
 
-            return [
-                SimilarityPrediction(name=self.id2label[idx], confidence=float(p))
+            # Prepare candidates for RL agent
+            candidates = [
+                (int(idx), self.id2label[idx], float(p))
                 for idx, p in zip(indices, values)
             ]
+
+            # Use RL agent for final selection
+            if use_rl:
+                # Extract embedding for context
+                embedding = self._extract_embedding(image)
+                context = embedding.cpu().numpy().flatten() if embedding is not None else None
+                
+                # Let RL agent select and rerank
+                selected = rl_agent.select_celebrities(
+                    candidate_celebrities=candidates,
+                    context=context,
+                    top_k=k,
+                )
+                
+                # Return RL-selected celebrities
+                return [
+                    SimilarityPrediction(name=name, confidence=float(prob))
+                    for _, name, prob, _ in selected
+                ]
+            else:
+                # Return base predictions
+                return [
+                    SimilarityPrediction(name=self.id2label[idx], confidence=float(p))
+                    for idx, p in zip(indices, values)
+                ]
+                
         except Exception as e:
             logger.error(f"Error processing image: {e}")
             raise ValueError(f"Could not process image: {e}") from e
+    
+    def load_feedback_from_db(self, feedbacks: List[Dict]):
+        """
+        Load feedback data from database to initialize feedback weights.
+        
+        Args:
+            feedbacks: List of feedback dicts with 'celebrity_name' and 'feedback_type' keys
+        """
+        self._feedback_weights.clear()
+        self._feedback_counts.clear()
+        
+        for feedback in feedbacks:
+            celebrity_name = feedback.get("celebrity_name")
+            feedback_type = feedback.get("feedback_type")
+            
+            if celebrity_name and feedback_type:
+                score = 1.0 if feedback_type == "like" else -1.0
+                self.update_feedback_weights(celebrity_name, score)
+        
+        logger.info(
+            f"Loaded {len(feedbacks)} feedbacks for {len(self._feedback_weights)} celebrities"
+        )
 
 
 celebrity_matcher = CelebrityMatcherModel()

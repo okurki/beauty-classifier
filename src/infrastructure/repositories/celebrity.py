@@ -1,7 +1,7 @@
 from sqlalchemy import select
 
 from .crud import CRUDRepository
-from ..database.models import Celebrity
+from ..database.models.public import Celebrity
 
 
 class CelebrityRepository(CRUDRepository[Celebrity]):
