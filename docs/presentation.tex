@@ -1,0 +1,210 @@
+\documentclass{beamer}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\title{Facial Analysis \& Recommendation System via Reinforcement Learning}
+\subtitle{Contextual Thompson Sampling for Personalized Celebrity Look-alike}
+\author{[Team Member Name 1] \and [Team Member Name 2] \and [Team Member Name 3]}
+\institute{PMLDL / CV / RL Course Project}
+\date{\today}
+\usetheme{Madrid}
+\begin{document}
+\frame{\titlepage}
+% -------------------------------------------------------------------------
+% SECTION 1: Introduction & Problem Recap (1-2 minutes)
+% -------------------------------------------------------------------------
+\section{Introduction \& Problem Definition}
+\begin{frame}{Problem Context}
+    \begin{itemize}
+        \item \textbf{Subjectivity of Beauty:} Facial attractiveness and celebrity resemblance are highly subjective metrics.
+        \item \textbf{Static Model Limitations:} Traditional classifiers provide a fixed output (e.g., "You look like Brad Pitt") which may not align with every user's perception.
+        \item \textbf{The Need for Adaptation:} A system is required that learns from individual user feedback to refine its recommendations over time.
+    \end{itemize}
+\end{frame}
+\begin{frame}{Project Objectives}
+    \begin{block}{Core Goal}
+        Develop a mobile application that uses Computer Vision for feature extraction and Reinforcement Learning for personalized recommendations.
+    \end{block}
+    \begin{itemize}
+        \item \textbf{Facial Analysis:} Accurately estimate attractiveness scores and identify celebrity look-alikes.
+        \item \textbf{Personalization:} Implement an RL agent that adapts to user preferences.
+        \item \textbf{Continuous Learning:} Enable the system to improve post-deployment via online updates.
+    \end{itemize}
+\end{frame}
+% -------------------------------------------------------------------------
+% SECTION 2: Methodology & RL Approach (4-5 minutes)
+% -------------------------------------------------------------------------
+\section{Methodology: Reinforcement Learning}
+\begin{frame}{Why Reinforcement Learning?}
+    We formulated the problem as a \textbf{Contextual Multi-Armed Bandit}.
+    
+    \begin{table}[]
+        \centering
+        \begin{tabular}{l|l}
+            \toprule
+            \textbf{Requirement} & \textbf{RL Solution (Thompson Sampling)} \\
+            \midrule
+            User preferences differ & Adapts to individuals vs. global model \\
+            Need exploration & Actively explores uncertain candidates \\
+            Improvement over time & Learns online after deployment \\
+            Uncertainty-aware & Beta distribution tracks confidence \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+\end{frame}
+\begin{frame}{Formal Model Definition}
+    \begin{itemize}
+        \item \textbf{State (Context):} 
+        \begin{itemize}
+            \item 512-dimensional facial embedding from \textbf{Inception ResNet V1}.
+            \item Encodes geometry, landmarks, and texture.
+        \end{itemize}
+        
+        \item \textbf{Actions (Arms):}
+        \begin{itemize}
+            \item Each celebrity in the dataset represents an "arm".
+            \item Action: Select Top-K celebrities to present.
+        \end{itemize}
+        
+        \item \textbf{Reward Signal:}
+        \begin{itemize}
+            \item Binary user feedback (Like 👍 / Dislike 👎).
+            \item \textbf{Update Rule:} Like $\rightarrow \alpha \leftarrow \alpha + 1$; Dislike $\rightarrow \beta \leftarrow \beta + 1$.
+        \end{itemize}
+    \end{itemize}
+\end{frame}
+\begin{frame}{Thompson Sampling Mechanism}
+    We maintain a \textbf{Beta($\alpha_i, \beta_i$)} distribution for each celebrity $i$.
+    
+    \begin{block}{Decision Loop}
+    \begin{enumerate}
+        \item \textbf{Sample:} Draw probability $p_i \sim \text{Beta}(\alpha_i, \beta_i)$ for each celebrity.
+        \item \textbf{Contextualize:} Adjust score using cosine similarity between user embedding and celebrity prototype.
+        \item \textbf{Rank:} Select Top-K candidates with highest adjusted scores.
+        \item \textbf{Update:} Receive user feedback and update posterior parameters $\alpha, \beta$.
+    \end{enumerate}
+    \end{block}
+    
+    \textit{"This approach naturally balances exploration of new candidates with exploitation of known successful matches."}
+\end{frame}
+% -------------------------------------------------------------------------
+% SECTION 3: System Implementation (4-5 minutes)
+% -------------------------------------------------------------------------
+\section{System Implementation}
+\begin{frame}{Technical Architecture}
+    \begin{columns}
+        \column{0.5\textwidth}
+        \textbf{Backend (beauty-classifier)}
+        \begin{itemize}
+            \item \textbf{Framework:} FastAPI (Python).
+            \item \textbf{ML Core:} PyTorch.
+            \item \textbf{Database:} PostgreSQL (User data & RL states).
+            \item \textbf{Infrastructure:} Docker containerization.
+        \end{itemize}
+        
+        \column{0.5\textwidth}
+        \textbf{Frontend (okurki\_app)}
+        \begin{itemize}
+            \item \textbf{Framework:} Flutter (Mobile).
+            \item \textbf{State Management:} Bloc/Cubit.
+            \item \textbf{Camera:} Native device integration.
+            \item \textbf{Design:} Material Design.
+        \end{itemize}
+    \end{columns}
+\end{frame}
+\begin{frame}{ML Models & Pipeline}
+    \begin{enumerate}
+        \item \textbf{Attractiveness Classifier:}
+        \begin{itemize}
+            \item \textbf{Architecture:} ResNet-50.
+            \item \textbf{Dataset:} SCUT-FBP5500 (5,500 frontal faces).
+            \item \textbf{Task:} Regression (Score 1.0 - 5.0).
+        \end{itemize}
+        
+        \item \textbf{Celebrity Matcher (Feature Extractor):}
+        \begin{itemize}
+            \item \textbf{Architecture:} Inception Resnet V1 (pretrained on VGGFace2).
+            \item \textbf{Dataset:} Open Famous People Faces (258 classes).
+            \item \textbf{Task:} Face recognition \& embedding generation.
+        \end{itemize}
+    \end{enumerate}
+\end{frame}
+\begin{frame}{Team Contributions}
+    \begin{itemize}
+        \item \textbf{[Team Member 1]:} 
+        \begin{itemize}
+            \item Backend architecture design (FastAPI).
+            \item Implementation of RL logic (Thompson Sampling).
+            \item Database schema design.
+        \end{itemize}
+        
+        \item \textbf{[Team Member 2]:}
+        \begin{itemize}
+            \item Computer Vision model training (ResNet50, InceptionResnet).
+            \item Data preprocessing and augmentation pipelines.
+            \item Model evaluation and metrics tracking.
+        \end{itemize}
+        
+        \item \textbf{[Team Member 3]:}
+        \begin{itemize}
+            \item Frontend development (Flutter).
+            \item UI/UX design and camera integration.
+            \item API integration and state management.
+        \end{itemize}
+    \end{itemize}
+\end{frame}
+% -------------------------------------------------------------------------
+% SECTION 4: Results & Evaluation (3-4 minutes)
+% -------------------------------------------------------------------------
+\section{Results & Evaluation}
+\begin{frame}{Model Performance}
+    \textbf{Attractiveness Classifier (ResNet-50):}
+    \begin{itemize}
+        \item Achieved low Mean Squared Error (MSE) on validation set.
+        \item High Pearson correlation with human ratings.
+    \end{itemize}
+    
+    \vspace{0.5cm}
+    
+    \textbf{Celebrity Matcher (Inception Resnet V1):}
+    \begin{itemize}
+        \item High Top-1 and Top-5 Accuracy on Open Famous People Faces dataset.
+        \item Robust embedding generation for diverse lighting conditions.
+    \end{itemize}
+\end{frame}
+\begin{frame}{RL Agent Analysis}
+    We track the following metrics to validate the online learning process:
+    
+    \begin{itemize}
+        \item \textbf{Cumulative Reward:} Global "happiness" score increases over time as the agent learns.
+        \item \textbf{Exploration Rate:} Decreases naturally as $\alpha$ and $\beta$ counts grow, but never reaches zero (always open to new trends).
+        \item \textbf{Regret:} The difference between optimal choice and agent choice diminishes, proving convergence.
+    \end{itemize}
+    
+    \begin{block}{Insight}
+        Unlike static systems, our agent identifies "polarizing" celebrities (high variance in Beta distribution) vs. "universally liked" ones.
+    \end{block}
+\end{frame}
+% -------------------------------------------------------------------------
+% SECTION 5: Conclusion (1 minute)
+% -------------------------------------------------------------------------
+\section{Conclusion}
+\begin{frame}{Summary & Future Work}
+    \textbf{Conclusion:}
+    \begin{itemize}
+        \item Successfully integrated State-of-the-Art CV models with Contextual Bandits.
+        \item The system moves beyond static prediction to \textbf{adaptive recommendation}.
+        \item "This turns our model into a live adaptive system, learning from humans in real time."
+    \end{itemize}
+    
+    \vspace{0.5cm}
+    
+    \textbf{Future Work:}
+    \begin{itemize}
+        \item \textbf{Cold Start:} Incorporate meta-learning for new users.
+        \item \textbf{A/B Testing:} Deploy different priors to optimize convergence speed.
+        \item \textbf{Full Integration:} Connect Flutter frontend to live Backend RL endpoints (currently mocked for demo).
+    \end{itemize}
+\end{frame}
+\end{document}
