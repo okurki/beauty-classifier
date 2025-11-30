@@ -50,7 +50,7 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./.infra/prometheus:/workspace
+      - {$PWD}/.infra/prometheus:/workspace
     command:
       - --config.file=/workspace/prometheus.yml
       - --enable-feature=exemplar-storage
@@ -65,7 +65,7 @@ services:
       - "4317:4317"
       - "4318:4318"
     volumes:
-      - ./.infra/tempo/tempo.yml:/etc/tempo.yml
+      - {$PWD}/.infra/tempo/tempo.yml:/etc/tempo.yml
     depends_on:
       - loki
     logging: *default-logging
@@ -75,9 +75,9 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./.infra/grafana/:/etc/grafana/provisioning/datasources
-      - ./.infra/dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml
-      - ./.infra/dashboards:/etc/grafana/dashboards
+      - {$PWD}/.infra/grafana/:/etc/grafana/provisioning/datasources
+      - {$PWD}/.infra/dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml
+      - {$PWD}/.infra/dashboards:/etc/grafana/dashboards
     depends_on:
       - loki
       - prometheus
