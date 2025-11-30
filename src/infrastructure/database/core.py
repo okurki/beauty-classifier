@@ -47,17 +47,27 @@ class DB:
 
     @classmethod
     def run_migrations(cls):
+        import os
+        import sys
+        
         try:
+            # Try to find alembic in venv first, fallback to system
+            alembic_cmd = ".venv/bin/alembic" if os.path.exists(".venv/bin/alembic") else "alembic"
+            
             result = subprocess.run(
-                ["uv", "run", "alembic", "upgrade", "head"],
+                [alembic_cmd, "upgrade", "head"],
                 capture_output=True,
                 text=True,
                 check=True,
             )
-            logger.info(result.stdout)
+            logger.info(f"Migrations applied successfully: {result.stdout}")
         except subprocess.CalledProcessError as e:
-            logger.error(f"Migration failed: {e}")
+            logger.error(f"Migration failed: {e.stderr}")
+            logger.error(f"stdout: {e.stdout}")
             raise
+        except FileNotFoundError:
+            logger.warning("Alembic not found, skipping migrations")
+            # Don't fail if alembic is not available
 
     @classmethod
     async def session(cls) -> AsyncGenerator[AsyncSession]:

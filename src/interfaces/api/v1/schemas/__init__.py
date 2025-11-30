@@ -4,3 +4,4 @@ from .user import UserCreate, UserUpdate, UserRead, InferenceCreate, InferenceRe
 from .base import IDMixin
 from .token import Token
 from .similarity import SimilarityPrediction
+from .feedback import FeedbackCreate, FeedbackRead, FeedbackRequest, FeedbackType

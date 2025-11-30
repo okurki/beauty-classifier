@@ -2,7 +2,7 @@ from typing import override
 from sqlalchemy import select, delete
 from sqlalchemy.orm import selectinload
 
-from src.infrastructure.database.models import User, Inference
+from src.infrastructure.database.models.public import User, Inference
 from .crud import CRUDRepository
 
 

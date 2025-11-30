@@ -55,3 +55,27 @@ class Inference(EntityBase):
         cascade="all, delete",
         lazy="selectin",
     )
+    feedbacks: Mapped[list["CelebrityFeedback"]] = relationship(
+        back_populates="inference", cascade="all, delete-orphan", lazy="selectin"
+    )
+
+
+class FeedbackType(StrEnum):
+    LIKE = "like"
+    DISLIKE = "dislike"
+
+
+class CelebrityFeedback(EntityBase):
+    __tablename__ = "celebrity_feedbacks"
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+    inference_id: Mapped[int] = mapped_column(ForeignKey("inferences.id"), nullable=False)
+    celebrity_id: Mapped[int] = mapped_column(ForeignKey("celebrities.id"), nullable=False, index=True)
+    feedback_type: Mapped[FeedbackType] = mapped_column(
+        Enum(FeedbackType, name="feedback_type", create_constraint=True, native_enum=False),
+        nullable=False,
+    )
+    timestamp: Mapped[datetime] = mapped_column(nullable=False)
+    
+    user: Mapped["User"] = relationship()
+    inference: Mapped["Inference"] = relationship(back_populates="feedbacks")
+    celebrity: Mapped["Celebrity"] = relationship()
