@@ -95,16 +95,18 @@
 \begin{frame}{Technical Architecture}
     \begin{columns}
         \column{0.5\textwidth}
-        \textbf{Backend (beauty-classifier)}
+        \textbf{Backend}
         \begin{itemize}
             \item \textbf{Framework:} FastAPI (Python).
             \item \textbf{ML Core:} PyTorch.
             \item \textbf{Database:} PostgreSQL (User data and RL states).
             \item \textbf{Infrastructure:} Docker containerization.
+            \item \textbf{Tracking and Metrics:} MLFlow, Grafana, Prometheus, OpenTelemetry, Loki, Tempo
+            \item \textbf{Data versioning:} DVC
         \end{itemize}
         
         \column{0.5\textwidth}
-        \textbf{Frontend (okurki\_app)}
+        \textbf{Frontend}
         \begin{itemize}
             \item \textbf{Framework:} Flutter (Mobile).
             \item \textbf{State Management:} Bloc/Cubit.
@@ -132,18 +134,18 @@
 \end{frame}
 \begin{frame}{Team Contributions}
     \begin{itemize}
-        \item \textbf{[Team Member 1]:} 
+        \item \textbf{Aleksandr Mikhailov:} 
         \begin{itemize}
-            \item Backend architecture design (FastAPI).
-            \item Implementation of RL logic (Thompson Sampling).
+            \item Backend architecture design.
             \item Database schema design.
+            \item ML Models design, training
+            \item Dataset collection
+            \item Deployment
         \end{itemize}
         
-        \item \textbf{[Team Member 2]:}
+        \item \textbf{Nikita Shiyanov:}
         \begin{itemize}
-            \item Computer Vision model training (ResNet50, InceptionResnet).
-            \item Data preprocessing and augmentation pipelines.
-            \item Model evaluation and metrics tracking.
+            \item RL Algorithm implementation (Thompson Sampling).
         \end{itemize}
         
         \item \textbf{Ivan Chabanov:}
