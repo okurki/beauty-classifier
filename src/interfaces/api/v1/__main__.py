@@ -27,9 +27,6 @@ async def lifespan(app: FastAPI):
 def create_app(lifespan: AsyncGenerator = lifespan) -> FastAPI:
     app = FastAPI(
         lifespan=lifespan,
-        docs_url=None if config.prod else "/docs",
-        redoc_url=None if config.prod else "/redoc",
-        openapi_url=None if config.prod else "/openapi.json",
     )
 
     app.add_middleware(
