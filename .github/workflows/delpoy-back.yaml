@@ -24,4 +24,3 @@ jobs:
     - name: Stop and restart containers
       run: |
         docker compose -f .infra/docker-compose.yml up --build -d && \
-        docker compose -f .infra/docker-compose.mlflow.yml up -d
