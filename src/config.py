@@ -5,8 +5,6 @@ from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 import dotenv
 
-from .logconf import Logging
-
 
 class DB(BaseModel):
     prod_uri: str
@@ -43,19 +41,16 @@ class Config(BaseSettings):
         env_nested_delimiter="__",
     )
     env: Literal["dev", "prod"]
+    app_name: str = "app"
     prod: bool = False
     db: DB
     api: API
     ml: ML
     auth: Auth
-    logging: Logging
+    otlp_grpc_endpoint: str = "tempo:4317"
 
     def model_post_init(self, context):
         self.prod = self.env == "prod"
-        self.logging.level = self.prod and "INFO" or "DEBUG"
-        self.logging.config = (
-            self.prod and self.logging.prod_config or self.logging.dev_config
-        )
         self.db.uri = (
             self.prod
             and self.db.prod_uri.replace("postgresql://", "postgresql+asyncpg://")
