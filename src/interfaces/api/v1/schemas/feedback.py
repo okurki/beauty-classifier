@@ -28,6 +28,17 @@ class FeedbackRead(Base):
     timestamp: datetime
     created_at: datetime
     updated_at: datetime
+    
+    @field_validator("feedback_type", mode="before")
+    @classmethod
+    def convert_feedback_type(cls, v):
+        """Convert string to FeedbackType enum"""
+        if isinstance(v, str):
+            try:
+                return FeedbackType(v.lower())
+            except ValueError:
+                raise ValueError(f"feedback_type must be 'like' or 'dislike', got '{v}'")
+        return v
 
 
 class FeedbackRequest(Base):

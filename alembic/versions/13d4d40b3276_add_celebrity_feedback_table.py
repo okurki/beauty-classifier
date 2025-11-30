@@ -23,8 +23,8 @@ def upgrade() -> None:
     op.create_table(
         'celebrity_feedbacks',
         sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('created_at', sa.DateTime(), nullable=False),
-        sa.Column('updated_at', sa.DateTime(), nullable=False),
+        sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.text('now()')),
+        sa.Column('updated_at', sa.DateTime(), nullable=False, server_default=sa.text('now()')),
         sa.Column('user_id', sa.Integer(), nullable=False),
         sa.Column('inference_id', sa.Integer(), nullable=False),
         sa.Column('celebrity_id', sa.Integer(), nullable=False),
