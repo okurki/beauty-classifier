@@ -15,10 +15,10 @@ from ..utils import APICase
 now = datetime.datetime.now()
 
 test_inference = InferenceCreate(
+    user_id=2,
     celebrities=[],
     attractiveness=0.5,
     timestamp=now,
-    picture=b"test",
 )
 test_user_create = UserCreate(name="test", password="test")
 test_id_read = IDMixin(id=2)

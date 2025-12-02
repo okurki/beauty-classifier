@@ -11,8 +11,6 @@ from tests.integration.api.utils import create_test_user, get_auth_token
 
 @pytest.mark.asyncio
 async def test_create_feedback_success(client: AsyncClient):
-    """Test successful feedback creation"""
-    # Create user and get token
     user = await create_test_user(client, "feedback_user", "password123")
     token = await get_auth_token(client, "feedback_user", "password123")
 
