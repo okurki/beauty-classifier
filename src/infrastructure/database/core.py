@@ -49,7 +49,7 @@ class DB:
     def run_migrations(cls):
         try:
             result = subprocess.run(
-                ["alembic", "upgrade", "head"],
+                ["uv", "run", "alembic", "upgrade", "head"],
                 capture_output=True,
                 text=True,
                 check=True,
