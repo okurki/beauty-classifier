@@ -1,8 +1,8 @@
-"""add tables
+"""
 
-Revision ID: abdf719175f4
+Revision ID: 808c50f05c6b
 Revises:
-Create Date: 2025-10-19 21:03:40.117504
+Create Date: 2025-12-02 16:44:45.361609
 
 """
 
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = "abdf719175f4"
+revision: str = "808c50f05c6b"
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -25,15 +25,20 @@ def upgrade() -> None:
     op.create_table(
         "celebrities",
         sa.Column("name", sa.String(), nullable=False),
-        sa.Column("picture", sa.LargeBinary(), nullable=False),
-        sa.Column("embedding", sa.LargeBinary(), nullable=True),
+        sa.Column("img_path", sa.String(), nullable=False),
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(),
+            server_default=sa.text("(CURRENT_TIMESTAMP)"),
+            nullable=False,
+        ),
         sa.Column(
             "created_at",
             sa.DateTime(),
             server_default=sa.text("(CURRENT_TIMESTAMP)"),
             nullable=False,
         ),
-        sa.Column("id", sa.Integer(), nullable=False),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(
@@ -47,8 +52,15 @@ def upgrade() -> None:
         sa.Column(
             "role",
             sa.Enum(
-                "USER", "ADMIN", name="role", create_constraint=True, native_enum=False
+                "USER", "ADMIN", name="role", native_enum=False, create_constraint=True
             ),
+            nullable=False,
+        ),
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(),
+            server_default=sa.text("(CURRENT_TIMESTAMP)"),
             nullable=False,
         ),
         sa.Column(
@@ -57,7 +69,6 @@ def upgrade() -> None:
             server_default=sa.text("(CURRENT_TIMESTAMP)"),
             nullable=False,
         ),
-        sa.Column("id", sa.Integer(), nullable=False),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(op.f("ix_users_created_at"), "users", ["created_at"], unique=False)
@@ -66,14 +77,20 @@ def upgrade() -> None:
         "inferences",
         sa.Column("attractiveness", sa.Float(), nullable=False),
         sa.Column("user_id", sa.Integer(), nullable=False),
-        sa.Column("picture", sa.LargeBinary(), nullable=False),
+        sa.Column("timestamp", sa.DateTime(), nullable=False),
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(),
+            server_default=sa.text("(CURRENT_TIMESTAMP)"),
+            nullable=False,
+        ),
         sa.Column(
             "created_at",
             sa.DateTime(),
             server_default=sa.text("(CURRENT_TIMESTAMP)"),
             nullable=False,
         ),
-        sa.Column("id", sa.Integer(), nullable=False),
         sa.ForeignKeyConstraint(
             ["user_id"],
             ["users.id"],
@@ -82,6 +99,68 @@ def upgrade() -> None:
     )
     op.create_index(
         op.f("ix_inferences_created_at"), "inferences", ["created_at"], unique=False
+    )
+    op.create_table(
+        "celebrity_feedbacks",
+        sa.Column("user_id", sa.Integer(), nullable=False),
+        sa.Column("inference_id", sa.Integer(), nullable=False),
+        sa.Column("celebrity_id", sa.Integer(), nullable=False),
+        sa.Column(
+            "feedback_type",
+            sa.Enum(
+                "LIKE",
+                "DISLIKE",
+                name="feedback_type",
+                native_enum=False,
+                create_constraint=True,
+            ),
+            nullable=False,
+        ),
+        sa.Column("timestamp", sa.DateTime(), nullable=False),
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(),
+            server_default=sa.text("(CURRENT_TIMESTAMP)"),
+            nullable=False,
+        ),
+        sa.Column(
+            "created_at",
+            sa.DateTime(),
+            server_default=sa.text("(CURRENT_TIMESTAMP)"),
+            nullable=False,
+        ),
+        sa.ForeignKeyConstraint(
+            ["celebrity_id"],
+            ["celebrities.id"],
+        ),
+        sa.ForeignKeyConstraint(
+            ["inference_id"],
+            ["inferences.id"],
+        ),
+        sa.ForeignKeyConstraint(
+            ["user_id"],
+            ["users.id"],
+        ),
+        sa.PrimaryKeyConstraint("id"),
+    )
+    op.create_index(
+        op.f("ix_celebrity_feedbacks_celebrity_id"),
+        "celebrity_feedbacks",
+        ["celebrity_id"],
+        unique=False,
+    )
+    op.create_index(
+        op.f("ix_celebrity_feedbacks_created_at"),
+        "celebrity_feedbacks",
+        ["created_at"],
+        unique=False,
+    )
+    op.create_index(
+        op.f("ix_celebrity_feedbacks_user_id"),
+        "celebrity_feedbacks",
+        ["user_id"],
+        unique=False,
     )
     op.create_table(
         "inference_celebrities",
@@ -104,6 +183,16 @@ def downgrade() -> None:
     """Downgrade schema."""
     # ### commands auto generated by Alembic - please adjust! ###
     op.drop_table("inference_celebrities")
+    op.drop_index(
+        op.f("ix_celebrity_feedbacks_user_id"), table_name="celebrity_feedbacks"
+    )
+    op.drop_index(
+        op.f("ix_celebrity_feedbacks_created_at"), table_name="celebrity_feedbacks"
+    )
+    op.drop_index(
+        op.f("ix_celebrity_feedbacks_celebrity_id"), table_name="celebrity_feedbacks"
+    )
+    op.drop_table("celebrity_feedbacks")
     op.drop_index(op.f("ix_inferences_created_at"), table_name="inferences")
     op.drop_table("inferences")
     op.drop_index(op.f("ix_users_name"), table_name="users")

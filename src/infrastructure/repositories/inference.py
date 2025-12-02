@@ -15,14 +15,14 @@ class InferenceRepository(CRUDRepository[Inference]):
         """
         inferece = Inference(**model.model_dump(exclude=["celebrities"]))
         celebrities = []
-        
+
         for celeb in model.celebrities:
             if celeb.id:
                 # Celebrity has ID, fetch from database
                 query = select(Celebrity).where(Celebrity.id == celeb.id)
                 result = await self.db.execute(query)
                 celeb_db = result.scalar_one_or_none()
-                
+
                 if celeb_db:
                     celebrities.append(celeb_db)
                 else:
@@ -38,7 +38,7 @@ class InferenceRepository(CRUDRepository[Inference]):
                 query = select(Celebrity).where(Celebrity.name == celeb.name)
                 result = await self.db.execute(query)
                 celeb_db = result.scalar_one_or_none()
-                
+
                 if celeb_db:
                     celebrities.append(celeb_db)
                 else:
@@ -49,7 +49,7 @@ class InferenceRepository(CRUDRepository[Inference]):
                             img_path=celeb.img_path,
                         )
                     )
-        
+
         inferece.celebrities = celebrities
         self.db.add(inferece)
         await self.db.flush()

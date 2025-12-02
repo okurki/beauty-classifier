@@ -19,7 +19,5 @@ class EntityBase(CreatedAtMixin):
     __abstract__ = True
     id: Mapped[int] = mapped_column(primary_key=True)
     updated_at: Mapped[datetime] = mapped_column(
-        nullable=False, 
-        server_default=func.now(),
-        onupdate=func.now()
+        nullable=False, server_default=func.now(), onupdate=func.now()
     )

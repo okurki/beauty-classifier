@@ -3,7 +3,6 @@ from logging.config import fileConfig
 
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
-from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 
@@ -71,7 +70,7 @@ async def run_async_migrations() -> None:
 
     """
     from sqlalchemy.ext.asyncio import create_async_engine
-    
+
     # Use the URL from config directly to avoid driver issues
     connectable = create_async_engine(
         config.db.uri,

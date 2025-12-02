@@ -1,2 +1,1 @@
 """ML API integration tests"""
-

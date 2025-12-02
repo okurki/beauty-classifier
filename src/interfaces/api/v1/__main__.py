@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
+import logging
 
 import uvicorn
 import uvicorn.config
@@ -9,10 +10,15 @@ from fastapi.staticfiles import StaticFiles
 
 from src.infrastructure.database import DB
 from src.infrastructure.ml_models import load_models
+from src.interfaces.api.v1.schemas import InferenceRead
+from src.application.services.ml import MLService
+from src.infrastructure.repositories import InferenceRepository
 from src.interfaces.api.v1.routers import routers
 from src.interfaces.api.v1.utils import setting_otlp
 from src.interfaces.api.v1.middleware import PrometheusMiddleware
 from src.config import config
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -21,19 +27,12 @@ async def lifespan(app: FastAPI):
     with open("static/index.html", "r", encoding="utf-8") as f:
         app.state.welcome_page_html = f.read()
     async with DB.lifespan():
-        # Load feedback weights from database after DB is ready
         try:
-            from src.application.services.ml import MLService
-            from src.infrastructure.repositories import InferenceRepository
-            
-            # Create a temporary session to load feedback weights
             async with DB.async_sessionmaker() as session:
-                ml_service = MLService(InferenceRepository(session))
+                ml_service = MLService(InferenceRepository(session), InferenceRead)
                 await ml_service.load_feedback_weights()
         except Exception as e:
-            import logging
-            logging.getLogger(__name__).warning(f"Could not load feedback weights on startup: {e}")
-        
+            logger.warning(f"Could not load feedback weights on startup: {e}")
         yield
 
 

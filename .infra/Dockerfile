@@ -12,4 +12,6 @@ RUN uv sync --no-dev
 # copy src files
 COPY . .
 
+RUN . .venv/bin/actiate
+
 EXPOSE 8000

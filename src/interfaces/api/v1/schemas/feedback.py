@@ -28,7 +28,7 @@ class FeedbackRead(Base):
     timestamp: datetime
     created_at: datetime
     updated_at: datetime
-    
+
     @field_validator("feedback_type", mode="before")
     @classmethod
     def convert_feedback_type(cls, v):
@@ -37,7 +37,9 @@ class FeedbackRead(Base):
             try:
                 return FeedbackType(v.lower())
             except ValueError:
-                raise ValueError(f"feedback_type must be 'like' or 'dislike', got '{v}'")
+                raise ValueError(
+                    f"feedback_type must be 'like' or 'dislike', got '{v}'"
+                )
         return v
 
 
@@ -45,11 +47,11 @@ class FeedbackRequest(Base):
     inference_id: int
     celebrity_id: int
     feedback_type: Union[str, FeedbackType] = Field(
-        ..., 
+        ...,
         description="Feedback type: 'like' or 'dislike'",
-        examples=["like", "dislike"]
+        examples=["like", "dislike"],
     )
-    
+
     @field_validator("feedback_type", mode="before")
     @classmethod
     def convert_to_enum(cls, v):
@@ -58,9 +60,10 @@ class FeedbackRequest(Base):
             try:
                 return FeedbackType(v.lower())
             except ValueError:
-                raise ValueError(f"feedback_type must be 'like' or 'dislike', got '{v}'")
+                raise ValueError(
+                    f"feedback_type must be 'like' or 'dislike', got '{v}'"
+                )
         elif isinstance(v, FeedbackType):
             return v
         else:
             raise ValueError(f"Invalid feedback_type type: {type(v)}")
-

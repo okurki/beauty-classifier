@@ -190,20 +190,33 @@
 % SECTION 4: Results & Evaluation (3-4 minutes)
 % -------------------------------------------------------------------------
 \section{Results & Evaluation}
-\begin{frame}{Model Performance}
+\begin{frame}{Model Metrics}
     \textbf{Attractiveness Classifier (ResNet-50):}
-    \begin{itemize}
-        \item Achieved low Mean Squared Error (MSE) on validation set.
-        \item High Pearson correlation with human ratings.
-    \end{itemize}
+    \begin{table}[]
+    \centering
+    \begin{tabular}{@{}lll@{}}
+    \toprule
+    \textbf{Metric} & \textbf{Train} & \textbf{Validation} \\
+    \midrule
+    MSE & 0.0066 & 0.0100 \\
+    Explained variance & 0.7815 & 0.6556 \\
+    \bottomrule
+    \end{tabular}
+    \end{table}
     
-    \vspace{0.5cm}
-    
+
     \textbf{Celebrity Matcher (Inception Resnet V1):}
-    \begin{itemize}
-        \item High Top-1 and Top-5 Accuracy on Open Famous People Faces dataset.
-        \item Robust embedding generation for diverse lighting conditions.
-    \end{itemize}
+    \begin{table}[]
+    \centering
+    \begin{tabular}{@{}lll@{}}
+    \toprule
+    \textbf{Metric} & \textbf{Train} & \textbf{Validation} \\
+    \midrule
+    MSE & 0.0367 & 0.0243 \\
+    Accuracy (top-1) & 0.9952 & 0.9903 \\
+    \bottomrule
+    \end{tabular}
+    \end{table}
 \end{frame}
 \begin{frame}{RL Agent Analysis}
     We track the following metrics to validate the online learning process:

@@ -28,21 +28,28 @@ class FeedbackRepository(CRUDRepository[CelebrityFeedback]):
         )
         return list(result.scalars().all())
 
-    async def get_celebrity_feedbacks(self, celebrity_id: int) -> list[CelebrityFeedback]:
+    async def get_celebrity_feedbacks(
+        self, celebrity_id: int
+    ) -> list[CelebrityFeedback]:
         """
         Get all feedbacks for a specific celebrity
         """
         result = await self.db.execute(
-            select(CelebrityFeedback).where(CelebrityFeedback.celebrity_id == celebrity_id)
+            select(CelebrityFeedback).where(
+                CelebrityFeedback.celebrity_id == celebrity_id
+            )
         )
         return list(result.scalars().all())
 
-    async def get_inference_feedbacks(self, inference_id: int) -> list[CelebrityFeedback]:
+    async def get_inference_feedbacks(
+        self, inference_id: int
+    ) -> list[CelebrityFeedback]:
         """
         Get all feedbacks for a specific inference
         """
         result = await self.db.execute(
-            select(CelebrityFeedback).where(CelebrityFeedback.inference_id == inference_id)
+            select(CelebrityFeedback).where(
+                CelebrityFeedback.inference_id == inference_id
+            )
         )
         return list(result.scalars().all())
-

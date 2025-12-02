@@ -3,7 +3,12 @@ from datetime import datetime
 from typing import Dict, List
 
 from src.infrastructure.repositories import FeedbackRepository, CelebrityRepository
-from src.interfaces.api.v1.schemas import FeedbackCreate, FeedbackRead, FeedbackRequest, FeedbackType
+from src.interfaces.api.v1.schemas import (
+    FeedbackCreate,
+    FeedbackRead,
+    FeedbackRequest,
+    FeedbackType,
+)
 from src.infrastructure.ml_models import celebrity_matcher
 from src.infrastructure.ml_models.rl.agent import rl_agent
 
@@ -43,21 +48,25 @@ class FeedbackService(CRUDService[FeedbackRepository, FeedbackCreate]):
         try:
             celebrity_repo = CelebrityRepository(self.repository.db)
             celebrity = await celebrity_repo.get(feedback_request.celebrity_id)
-            
+
             if celebrity:
                 # Convert display name back to internal format
                 celebrity_name = "_".join(celebrity.name.lower().split())
-                feedback_score = 1.0 if feedback_request.feedback_type == FeedbackType.LIKE else -1.0
-                
+                feedback_score = (
+                    1.0 if feedback_request.feedback_type == FeedbackType.LIKE else -1.0
+                )
+
                 # Update simple feedback weights
-                celebrity_matcher.update_feedback_weights(celebrity_name, feedback_score)
-                
+                celebrity_matcher.update_feedback_weights(
+                    celebrity_name, feedback_score
+                )
+
                 # Update RL agent (Thompson Sampling)
                 rl_agent.update(
                     celebrity_id=feedback_request.celebrity_id,
                     reward=feedback_score,
                 )
-                
+
                 logger.info(
                     f"Updated model weights and RL agent for celebrity {celebrity_name} "
                     f"(reward={feedback_score})"
@@ -95,10 +104,10 @@ class FeedbackService(CRUDService[FeedbackRepository, FeedbackCreate]):
         Get statistics about feedbacks for a celebrity
         """
         feedbacks = await self.repository.get_celebrity_feedbacks(celebrity_id)
-        
+
         likes = sum(1 for f in feedbacks if f.feedback_type == FeedbackType.LIKE)
         dislikes = sum(1 for f in feedbacks if f.feedback_type == FeedbackType.DISLIKE)
-        
+
         return {
             "total": len(feedbacks),
             "likes": likes,
@@ -111,13 +120,12 @@ class FeedbackService(CRUDService[FeedbackRepository, FeedbackCreate]):
         Get statistics about user's feedback activity
         """
         feedbacks = await self.repository.get_user_feedbacks(user_id)
-        
+
         likes = sum(1 for f in feedbacks if f.feedback_type == FeedbackType.LIKE)
         dislikes = sum(1 for f in feedbacks if f.feedback_type == FeedbackType.DISLIKE)
-        
+
         return {
             "total": len(feedbacks),
             "likes": likes,
             "dislikes": dislikes,
         }
-

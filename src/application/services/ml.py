@@ -3,8 +3,11 @@ from datetime import datetime
 
 from sqlalchemy import select
 from src.infrastructure.ml_models import attractiveness_model, celebrity_matcher
-from src.infrastructure.repositories import InferenceRepository, FeedbackRepository, CelebrityRepository
-from src.infrastructure.database.models.public import CelebrityFeedback, Celebrity as CelebrityModel
+from src.infrastructure.repositories import InferenceRepository
+from src.infrastructure.database.models.public import (
+    CelebrityFeedback,
+    Celebrity as CelebrityModel,
+)
 from src.interfaces.api.v1.schemas import InferenceCreate, InferenceRead, Celebrity
 
 from .crud import CRUDService
@@ -12,7 +15,7 @@ from .crud import CRUDService
 logger = logging.getLogger(__name__)
 
 
-class MLService(CRUDService[InferenceRepository, InferenceCreate]):
+class MLService(CRUDService[InferenceRepository, InferenceRead]):
     repository: InferenceRepository
 
     def get_attractiveness(self, image: bytes):
@@ -30,35 +33,36 @@ class MLService(CRUDService[InferenceRepository, InferenceCreate]):
         return round(predicted_attractiveness, 4)
 
     async def load_feedback_weights(self):
-        """
-        Load all feedback from database and update celebrity matcher weights.
-        Should be called periodically or after new feedback is submitted.
-        """
         try:
-            feedback_repo = FeedbackRepository(self.repository.db)
-            # Get all feedbacks from database
             result = await self.repository.db.execute(
-                select(CelebrityFeedback, CelebrityModel)
-                .join(CelebrityModel, CelebrityFeedback.celebrity_id == CelebrityModel.id)
+                select(CelebrityFeedback, CelebrityModel).join(
+                    CelebrityModel, CelebrityFeedback.celebrity_id == CelebrityModel.id
+                )
             )
             rows = result.all()
-            
+
             feedbacks = []
             for feedback, celebrity in rows:
-                # Convert celebrity display name back to internal format
-                # "John Doe" -> "john_doe"
                 celebrity_name = "_".join(celebrity.name.lower().split())
-                feedbacks.append({
-                    "celebrity_name": celebrity_name,
-                    "feedback_type": feedback.feedback_type.value,
-                })
-            
+                feedbacks.append(
+                    {
+                        "celebrity_name": celebrity_name,
+                        "feedback_type": feedback.feedback_type.value,
+                    }
+                )
+
             celebrity_matcher.load_feedback_from_db(feedbacks)
             logger.info(f"Loaded {len(feedbacks)} feedbacks into celebrity matcher")
         except Exception as e:
             logger.error(f"Failed to load feedback weights: {e}")
 
-    async def get_celebrities(self, image: bytes, top_k: int | None = None, apply_feedback: bool = True, use_rl: bool = True):
+    async def get_celebrities(
+        self,
+        image: bytes,
+        top_k: int | None = None,
+        apply_feedback: bool = True,
+        use_rl: bool = True,
+    ):
         if not image:
             logger.debug("No image provided")
             return None
@@ -66,28 +70,28 @@ class MLService(CRUDService[InferenceRepository, InferenceCreate]):
             logger.error("Celebrity matcher not loaded")
             celebrity_matcher.load()
         try:
-            predictions = celebrity_matcher.predict(image, top_k, apply_feedback=apply_feedback, use_rl=use_rl)
+            predictions = celebrity_matcher.predict(
+                image, top_k, apply_feedback=apply_feedback, use_rl=use_rl
+            )
         except ValueError as e:
             logger.debug(f"Could not process image: {e}")
             return None
-        
+
         # Get or create celebrities in database to get their IDs
         result_celebrities = []
-        
+
         for celeb in predictions:
             # Format name for display
             display_name = " ".join(
                 [name_part.capitalize() for name_part in celeb.name.split("_")]
             )
             img_path = f"/celebrities_pretty/{celeb.name}.jpg"
-            
+
             # Check if celebrity exists in database
-            query = select(CelebrityModel).where(
-                CelebrityModel.name == display_name
-            )
+            query = select(CelebrityModel).where(CelebrityModel.name == display_name)
             result = await self.repository.db.execute(query)
             celeb_db = result.scalar_one_or_none()
-            
+
             if celeb_db:
                 # Celebrity exists, use their ID
                 result_celebrities.append(
@@ -106,7 +110,7 @@ class MLService(CRUDService[InferenceRepository, InferenceCreate]):
                         img_path=img_path,
                     )
                 )
-        
+
         return result_celebrities
 
     async def create_inference(

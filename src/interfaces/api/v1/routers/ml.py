@@ -2,7 +2,12 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, UploadFile, HTTPException, status
 
 from src.interfaces.api.v1.middleware import JWTAuth
-from src.interfaces.api.v1.schemas import Token, InferenceRead, FeedbackRequest, FeedbackRead
+from src.interfaces.api.v1.schemas import (
+    Token,
+    InferenceRead,
+    FeedbackRequest,
+    FeedbackRead,
+)
 from ..schemas import AttractivenessPrediction, SimilarityPrediction
 from src.application.services.ml import MLService
 from src.application.services.feedback import FeedbackService
@@ -162,11 +167,12 @@ async def reload_feedback_weights(
 
 # ==================== RL Agent Endpoints ====================
 
+
 @ml_router.get("/rl/stats")
 async def get_rl_stats() -> dict:
     """
     Get global RL agent statistics.
-    
+
     Returns metrics like cumulative reward, exploration rate, CTR, etc.
     """
     return rl_agent.get_global_stats()
@@ -176,7 +182,7 @@ async def get_rl_stats() -> dict:
 async def get_rl_celebrity_stats(celebrity_id: int) -> dict:
     """
     Get RL statistics for a specific celebrity.
-    
+
     Shows Beta distribution parameters (alpha, beta), mean probability,
     uncertainty, and impression counts.
     """
@@ -193,7 +199,7 @@ async def get_rl_celebrity_stats(celebrity_id: int) -> dict:
 async def get_rl_top_celebrities(top_k: int = 10) -> list[dict]:
     """
     Get top-K celebrities by RL agent's mean probability.
-    
+
     This shows which celebrities the RL agent believes are most likely
     to receive positive feedback.
     """
@@ -206,7 +212,7 @@ async def reset_rl_agent(
 ) -> dict:
     """
     Reset RL agent to initial state (admin only).
-    
+
     This clears all learned statistics and restarts exploration.
     Use with caution!
     """
@@ -218,7 +224,7 @@ async def reset_rl_agent(
 async def get_rl_metrics() -> dict:
     """
     Get detailed RL performance metrics.
-    
+
     Includes:
     - Cumulative reward
     - Average reward
@@ -228,10 +234,12 @@ async def get_rl_metrics() -> dict:
     - Total impressions and feedback counts
     """
     stats = rl_agent.get_global_stats()
-    
+
     # Add additional computed metrics
-    stats["regret_estimate"] = max(0, stats["total_impressions"] - stats["cumulative_reward"])
-    
+    stats["regret_estimate"] = max(
+        0, stats["total_impressions"] - stats["cumulative_reward"]
+    )
+
     return {
         "status": "success",
         "metrics": stats,
@@ -242,5 +250,5 @@ async def get_rl_metrics() -> dict:
             "like_rate": "Percentage of feedback that was positive",
             "exploration_rate": "Percentage of exploratory actions",
             "regret_estimate": "Estimated cumulative regret (upper bound)",
-        }
+        },
     }

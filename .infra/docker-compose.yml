@@ -24,10 +24,10 @@ services:
       - postgres
       - loki
     command: [
-      ".venv/bin/python","-m", "src.interfaces.api.v1"
+      "python","-m", "src.interfaces.api.v1"
     ]
     logging: *default-logging
-  
+
   postgres:
     image: postgres:17-alpine
     restart: always
@@ -39,13 +39,13 @@ services:
       - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
-      
+
   loki:
     image: grafana/loki:3.5.0
     command: -config.file=/etc/loki/local-config.yaml
     ports:
       - "3100:3100"
-      
+
   prometheus:
     image: prom/prometheus:v3.3.1
     ports:
@@ -57,7 +57,7 @@ services:
       - --enable-feature=exemplar-storage
     depends_on:
       - loki
-    
+
   tempo:
     image: grafana/tempo:2.7.2
     command: [ "-config.file=/etc/tempo.yml", "--target=all", "--storage.trace.backend=local", "--storage.trace.local.path=/var/tempo", "--auth.enabled=false" ]

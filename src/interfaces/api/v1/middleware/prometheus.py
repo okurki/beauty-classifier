@@ -1,4 +1,5 @@
 import time
+import logging
 
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
@@ -14,6 +15,10 @@ from starlette.responses import Response
 from starlette.routing import Match
 from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
 from starlette.types import ASGIApp
+
+from src.config import config
+
+logger = logging.getLogger(__name__)
 
 INFO = Gauge("fastapi_app_info", "FastAPI application information.", ["app_name"])
 REQUESTS = Counter(
@@ -164,52 +169,44 @@ class PrometheusMiddleware(BaseHTTPMiddleware):
         return request.url.path, False
 
 
-def update_rl_metrics(app_name: str = "fastapi-app") -> None:
+def update_rl_metrics(app_name: str = config.app_name) -> None:
     """
     Update Prometheus metrics from RL agent state.
     Should be called periodically or after feedback updates.
     """
     from src.infrastructure.ml_models.rl.agent import rl_agent
-    
+
     try:
         stats = rl_agent.get_global_stats()
-        
+
         # Update global metrics
         RL_CUMULATIVE_REWARD.labels(app_name=app_name).set(stats["cumulative_reward"])
         RL_AVERAGE_REWARD.labels(app_name=app_name).set(stats["average_reward"])
         RL_EXPLORATION_RATE.labels(app_name=app_name).set(stats["exploration_rate"])
         RL_CTR.labels(app_name=app_name).set(stats["ctr"])
         RL_LIKE_RATE.labels(app_name=app_name).set(stats["like_rate"])
-        
+
         # Update celebrity-specific metrics for top celebrities
         top_celebrities = rl_agent.get_top_celebrities(top_k=20)
         for celeb in top_celebrities:
             celeb_id = str(celeb["celebrity_id"])
             celeb_name = celeb["celebrity_name"]
-            
+
             celeb_stats = rl_agent.get_celebrity_stats(celeb["celebrity_id"])
             if celeb_stats:
                 RL_CELEBRITY_ALPHA.labels(
-                    celebrity_id=celeb_id,
-                    celebrity_name=celeb_name,
-                    app_name=app_name
+                    celebrity_id=celeb_id, celebrity_name=celeb_name, app_name=app_name
                 ).set(celeb_stats["alpha"])
-                
+
                 RL_CELEBRITY_BETA.labels(
-                    celebrity_id=celeb_id,
-                    celebrity_name=celeb_name,
-                    app_name=app_name
+                    celebrity_id=celeb_id, celebrity_name=celeb_name, app_name=app_name
                 ).set(celeb_stats["beta"])
-                
+
                 RL_CELEBRITY_MEAN_PROB.labels(
-                    celebrity_id=celeb_id,
-                    celebrity_name=celeb_name,
-                    app_name=app_name
+                    celebrity_id=celeb_id, celebrity_name=celeb_name, app_name=app_name
                 ).set(celeb_stats["mean_probability"])
     except Exception as e:
-        # Don't fail if metrics update fails
-        import logging
-        logging.getLogger(__name__).warning(f"Failed to update RL metrics: {e}")
+        logger.warning(f"Failed to update RL metrics: {e}")
 
 
 def setting_otlp(
