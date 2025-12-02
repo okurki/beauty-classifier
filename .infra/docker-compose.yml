@@ -24,7 +24,7 @@ services:
       - postgres
       - loki
     command: [
-      "python","-m", "src.interfaces.api.v1"
+      ".venv/bin/python","-m", "src.interfaces.api.v1"
     ]
     logging: *default-logging
 
