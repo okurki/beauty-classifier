@@ -39,6 +39,7 @@ class Config(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=[".env.example", ".env"],
         env_nested_delimiter="__",
+        extra="ignore",
     )
     env: Literal["dev", "prod"]
     app_name: str = "app"
